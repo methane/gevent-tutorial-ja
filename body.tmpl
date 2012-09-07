@@ -2,126 +2,47 @@
 <html>
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <script src="http://yandex.st/highlightjs/6.0/highlight.min.js"></script>
-    <link rel="stylesheet" href="http://yandex.st/highlightjs/6.0/styles/github.min.css">
-    <link href='http://fonts.googleapis.com/css?family=Droid+Sans:400,700|Droid+Serif:400,400italic|Inconsolata' rel='stylesheet'>
-    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="jquery.js"></script>
+    <script src="highlight.min.js"></script>
+    <script src="nav.js"></script>
+
+    <!-- Code Monospace Font -->
+    <link href='http://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet'>
+
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="skeleton.css">
+    <link rel="stylesheet" href="layout.css">
+    <link rel="stylesheet" href="gevent.css">
+
+    <!-- Syntax Highlighting Theme -->
+    <link rel="stylesheet" href="github.min.css">
+
     <title>Gevent チュートリアル</title>
 </head>
-<style>
-    body {
-        color: #4C4C4C;
-        background-color: #c9dbb2;
-        margin-left: 0px;
-        margin-top: 5px;
-    }
-
-    .toc {
-        left: 0px;
-        top: 5px;
-        position: fixed;
-        float: left;
-        width: 150px;
-
-        background-color: #FAFBFC;
-        border: 1px solid #FAFBFC;
-
-        border-top-right-radius: 10px;
-        border-bottom-right-radius: 10px;
-
-        padding-left: 5px;
-        height: 100%;
-    }
-
-    .toc ul {
-        margin: 0px;
-        padding: 0px;
-        list-style-type: none;
-    }
-
-    .toc ul ul {
-        font-size: 80%;
-        padding-left: 5px;
-    }
-
-    #content {
-        max-width: 960px;
-        margin-left: 160px;
-        padding: 10px;
-        border: 1px solid #FAFBFC;
-
-        background-color: #FAFBFC;
-
-        border-radius: 10px;
-        box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.5);
-    }
-
-    a {
-        color: inherit;
-    }
-
-    pre {
-        border: 1px solid #ccc;
-        background-color: ghostWhite;
-
-        border-radius: 10px;
-        padding: 5px;
-    }
-
-    p code {
-        font-family: monospace;
-        border-bottom: 1px dashed #ccc;
-    }
-
-    .label { 
-        display: block;
-        margin-bottom: 0px;
-        padding: 0px;
-        font-family: sans;
-        font-weight: bold;
-        width: 200px;
-        padding: 0.5em;
-    }
-
-    .author {
-        text-align: center;
-    }
-
-    .email {
-        text-align: center;
-        font-size: 10pt;
-    }
-
-
-    h1 {
-        text-align: center;
-        padding-bottom: 5px;
-    }
-
-    h2 {
-        padding-bottom: 10px;
-    }
-
-    .green {
-        color: #7c9a5e;
-    }
-</style>
 <body>
-<div id="content">
+<div class="container">
 
-<header>
-    <h1>Python プログラマーのための <span class="green">gevent</span> チュートリアル</h1>
-    <h3 class="author">
-        Written by the Gevent Community
-    </h3>
-</header>
+<div id="sidebar" class="three columns sidebar">
+    <nav>
+    </nav>
+</div>
 
-<blockquote>
+<div class="twelve columns offset-by-three content">
+
+    <header>
+        <h1>Python プログラマーのための <span class="green">gevent</span> チュートリアル</h1>
+        <h3 class="author">
+            Written by the Gevent Community
+        </h3>
+
+        <blockquote>
 gevent は <a href="http://software.schmorp.de/pkg/libev.html">libev</a> を元にした並行ライブラリです。
 ネットワークや並行プログラミングのためのクリーンなAPIを提供しています。
-</blockquote>
+        </blockquote>
+    </header>
 
-{{ body }}
+    {{ body }}
 </div>
+
 </body>
 </html>

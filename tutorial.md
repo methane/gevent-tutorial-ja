@@ -24,6 +24,9 @@
 [Alexis Metaireau](http://notmyidea.org)
 [Daniel Velkov](https://github.com/djv)
 
+そして Denis Bilenko に、 gevent の開発とこのチュートリアルを作る上での
+指導について感謝します。
+
 この共同作業によるドキュメントは MIT ライセンスにて公開されています。
 何か追記したいことがあったり、タイプミスを発見した場合は、
 [Github](https://github.com/sdiehl/gevent-tutorial) で fork して pull
@@ -288,7 +291,7 @@ green スレッドが "決定論的な並行" であっても、 POSIX スレッ
 Python でプログラミングをすると忘れた頃にハマる問題のタネです. 並行プログラミングとは
 無関係です)
 
-## Spawning Threads
+## Spawning Greenlets
 
 gevent は greenlet の初期化のラッパーを幾つか提供しています。
 幾つかのよくあるパターンは:
