@@ -331,16 +331,16 @@ Task 7 done
 Task 8 done
 Task 9 done
 Asynchronous:
-Task 1 done
-Task 8 done
-Task 6 done
 Task 0 done
-Task 9 done
-Task 7 done
 Task 5 done
-Task 4 done
+Task 7 done
+Task 9 done
+Task 8 done
 Task 3 done
 Task 2 done
+Task 1 done
+Task 6 done
+Task 4 done
 </pre></code></p>
 <p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
 メインプログラムは各タスクを実行している間 <em>ブロックする</em>
@@ -523,12 +523,6 @@ greenlet は例外を投げそこねるかもしれませんし、停止でき�
 <p>greenlet の内部状態は基本的に時間とともに変化するパラメーターになります。
 greenlet の状態をモニターするための幾つかのフラグがあります。</p>
 <ul>
-<li><code>started</code> -- Boolean, indicates whether the Greenlet has been started. </li></li>
-<li><code>ready()</code> -- Boolean, indicates whether the Greenlet has halted</li></li>
-<li><code>successful()</code> -- Boolean, indicates whether the Greenlet has halted and not thrown an exception</li></li>
-<li><code>value</code> -- arbitrary, the value returned by the Greenlet</li></li>
-<li><code>exception</code> -- exception, uncaught exception instance thrown inside the greenlet</li></li>
-<li></li>
 <li><code>started</code> -- bool値: greenlet が開始しているかどうか.</li>
 <li><code>ready()</code> -- bool値, greenlet が停止(halt)しているかどうか.</li>
 <li><code>successful()</code> -- bool値, greenlet が例外を投げずに終了したかどうか.</li>
@@ -964,11 +958,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 4374397328
+Hello from Greenlet 4366262672
 Size of group 2
-Hello from Greenlet 4374399728
+Hello from Greenlet 4366265072
 Size of group 1
-Hello from Greenlet 4374378288
+Hello from Greenlet 4366239536
 Ordered
 ('task', 0)
 ('task', 1)
@@ -1328,8 +1322,7 @@ WSGIServer(('', 8000), ajax_endpoint).serve_forever()
 </pre>
 
 <h2 id="websockets">Websockets</h2>
-<p>Websocket example which requires <a href="https://bitbucket.org/Jeffrey/gevent-websocket/src">gevent-websocket</a>.
-Websocket のサンプルは <a href="https://bitbucket.org/Jeffrey/gevent-websocket/src">gevent-websocket</a>
+<p>Websocket のサンプルは <a href="https://bitbucket.org/Jeffrey/gevent-websocket/src">gevent-websocket</a>
 を利用しています。</p>
 <pre>
 <code class="python"># Simple gevent-websocket server

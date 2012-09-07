@@ -357,12 +357,6 @@ greenlet は例外を投げそこねるかもしれませんし、停止でき�
 greenlet の内部状態は基本的に時間とともに変化するパラメーターになります。
 greenlet の状態をモニターするための幾つかのフラグがあります。
 
-- ``started`` -- Boolean, indicates whether the Greenlet has been started. </li>
-- ``ready()`` -- Boolean, indicates whether the Greenlet has halted</li>
-- ``successful()`` -- Boolean, indicates whether the Greenlet has halted and not thrown an exception</li>
-- ``value`` -- arbitrary, the value returned by the Greenlet</li>
-- ``exception`` -- exception, uncaught exception instance thrown inside the greenlet</li>
-- 
 - ``started`` -- bool値: greenlet が開始しているかどうか.
 - ``ready()`` -- bool値, greenlet が停止(halt)しているかどうか.
 - ``successful()`` -- bool値, greenlet が例外を投げずに終了したかどうか.
@@ -1080,7 +1074,6 @@ WSGIServer(('', 8000), ajax_endpoint).serve_forever()
 
 ## Websockets
 
-Websocket example which requires <a href="https://bitbucket.org/Jeffrey/gevent-websocket/src">gevent-websocket</a>.
 Websocket のサンプルは [gevent-websocket](https://bitbucket.org/Jeffrey/gevent-websocket/src)
 を利用しています。
 
