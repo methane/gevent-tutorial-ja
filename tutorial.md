@@ -222,7 +222,7 @@ asynchronous()
 </code>
 </pre>
 
-## 決定論(determinism)
+## Determinism
 
 先に触れたように、 greenlet は決定論的に動作します。
 同じように設定した greenlets があって、同じ入力が与えられた場合、
