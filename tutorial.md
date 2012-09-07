@@ -477,8 +477,8 @@ with Timeout(time_to_wait, TooLong):
 </code>
 </pre>
 
-In addition, gevent also provides timeout arguments for a
-variety of Greenlet and data stucture related calls. For example:
+加えて、 gevent は多くの greenlet やデータ構造に関する関数に timeout
+引数を提供しています。例えば:
 
 [[[cog
 import gevent
@@ -515,12 +515,11 @@ except Timeout:
 ]]]
 [[[end]]]
 
-# Data Structures
+# データ構造
 
 ## Events
 
-Events are a form of asynchronous communication between
-Greenlets.
+イベントは greenlet 間の非同期通信の一つです。
 
 <pre>
 <code class="python">import gevent
@@ -551,11 +550,10 @@ gevent.joinall([
 </code>
 </pre>
 
-A extension of the Event object is the AsyncResult which
-allows you to send a value along with the wakeup call. This is
-sometimes called a future or a deferred, since it holds a 
-reference to a future value that can be set on an arbitrary time
-schedule.
+Event オブジェクトの拡張の AsyncResult を使うと、モーニングコール
+(wakeup call) 付きの値を送ることができます。
+これは将来どこかのタイミングで設定される値に対する参照を持っているので、
+future とか deferred と呼ばれることもあります。
 
 <pre>
 <code class="python">import gevent
@@ -586,13 +584,12 @@ gevent.joinall([
 
 ## Queues
 
-Queues are ordered sets of data that have the usual ``put`` / ``get``
-operations but are written in a way such that they can be safely
-manipulated across Greenlets.
+キューはデータの順序付き集合で、標準的な ``put / get`` 操作を持っています。
+これは greenlet をまたいで安全に操作できるように実装されています。
 
-For example if one Greenlet grabs an item off of the queue, the
-same item will not grabbed by another Greenlet executing
-simultaneously.
+
+例えば、ある greenlet がキューから要素を取得した時、同じ要素が並行して
+動いている他の greenlet でも取得されることはありません。
 
 [[[cog
 import gevent
@@ -622,23 +619,21 @@ gevent.joinall([
 ]]]
 [[[end]]]
 
-Queues can also block on either ``put`` or ``get`` as the need arises. 
+キューは必要があれば ``put`` でも ``get`` でもブロックすることがあります。
 
-Each of the ``put`` and ``get`` operations has a non-blocking
-counterpart, ``put_nowait`` and 
-``get_nowait`` which will not block, but instead raise
-either ``gevent.queue.Empty`` or
-``gevent.queue.Full`` in the operation is not possible.
+``put`` と ``get`` にはそれぞれブロックしないバージョンとして
+それぞれ ``put_nowait`` と ``get_nowait`` が用意されています。
+これらの操作は実行できない場合はブロックする代わりに
+``gevent.queue.Empty`` か ``gevent.queue.Full`` 例外を発生させます。
 
-In this example we have the boss running simultaneously to the
-workers and have a restriction on the Queue that it can contain no
-more than three elements. This restriction means that the ``put``
-operation will block until there is space on the queue.
-Conversely the ``get`` operation will block if there are
-no elements on the queue to fetch, it also takes a timeout
-argument to allow for the queue to exit with the exception
-``gevent.queue.Empty`` if no work can found within the
-time frame of the Timeout.
+次の例では、並行して動いている boss と複数の worker がいて、
+3要素以上格納できない制限付きのキューがあります。
+この制限により、キューに空きが無いときは空きができるまで ``put``
+操作がブロックして、キューが空の場合は要素が格納されるまで ``get``
+操作がブロックします。
+``get`` には timeout 引数を設定して、その時間内に要素を取得できない
+場合は ``gevent.queue.Empty`` 例外を発生させて終了します。
+
 
 [[[cog
 import gevent
@@ -680,9 +675,8 @@ gevent.joinall([
 
 ## Groups and Pools
 
-A group is a collection of running greenlets which are managed
-and scheduled together as group. It also doubles as parallel
-dispatcher that mirrors the Python ``multiprocessing`` library.
+グループとは、複数の greenlet をまとめてスケジュールしたり管理するものです。
+Python の ``multiprocessing`` ライブラリの並列ディスパッチを置き換える用途にも使えます。
 
 [[[cog
 import gevent
@@ -706,12 +700,10 @@ group.join()
 ]]]
 [[[end]]]
 
-This is very usefull for managing groups of asynchronous tasks
-that.
+これは非同期なタスクのグループを管理するのに便利です。
 
-As mentioned above Group also provides an API for dispatching
-jobs to grouped greenlets and collecting their results in various
-ways.
+上で述べたように、 Group はグループ化された greenlet に対してジョブを
+ディスパッチし、その結果をいろいろな方法で取得するためのAPIを提供しています。
 
 [[[cog
 import gevent
@@ -746,10 +738,9 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 ]]]
 [[[end]]]
 
-A pool is a structure designed for handling dynamic numbers of
-greenlets which need to be concurrency-limited.  This is often
-desirable in cases where one wants to do many network or IO bound
-tasks in parallel.
+pool は並行数を制限しながら動的な数の greenlet を扱うためのものです。
+たくさんのネットワークやIOバウンドのタスクを並列に実行したい場合に
+最適です。
 
 [[[cog
 import gevent
@@ -768,6 +759,9 @@ pool.map(hello_from, xrange(3))
 Often when building gevent driven services one will center the
 entire service around a pool structure. An example might be a
 class which polls on various sockets.
+gevent を使ったサービスを作るときに、よく中央に pool を持った
+構成で設計します。
+例えばたくさんのソケットをポーリングするクラスです。
 
 <pre>
 <code class="python">from gevent.pool import Pool
@@ -796,13 +790,12 @@ class SocketPool(object):
 
 ## Locks and Semaphores
 
-A semaphore is a low level synchronization primitive that allows
-greenlets to coordinate and limit concurrent access or execution. A
-semaphore exposes two methods, ``acquire`` and ``release`` The
-difference between the number of times and a semaphore has been
-acquired and released is called the bound of the semaphore. If a
-semaphore bound reaches 0 it will block until another greenlet
-releases its acquisition.
+セマフォ(Semaphore) は greenlet に並行アクセスや並行実行を調整する低レベルな
+同期機構です。
+セマフォは ``acquire`` と ``release`` というメソッドを提供しています。
+``acquire`` と ``release`` の呼び出された回数のをセマフォの bound と呼びます。
+bound が0になると、他の greenlet が ``release`` するまでブロックします。
+
 
 [[[cog
 from gevent import sleep
@@ -830,10 +823,10 @@ pool.map(worker2, xrange(3,6))
 ]]]
 [[[end]]]
 
-A semaphore with bound of 1 is known as a Lock. it provides
-exclusive execution to one greenlet. They are often used to
-ensure that resources are only in use at one time in the context
-of a program.
+bound が 1 のセマフォのことをロック(Lock)と言います。
+ロックを使うと一つの greenlet だけを実行可能にすることができます。
+プログラムのコンテキストでなにかのリソースを並行して複数の greenlet
+から使わないようにするために利用されます。
 
 ## Thread Locals
 
