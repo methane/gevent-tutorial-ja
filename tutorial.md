@@ -350,19 +350,24 @@ g.join()
 
 ## Greenlet State
 
-Like any other segment of code, Greenlets can fail in various
-ways. A greenlet may fail to throw an exception, fail to halt or
-consume too many system resources.</p>
+他のどんなコードでもあるように、 greenlet もいろいろな失敗をすることがあります。
+greenlet は例外を投げそこねるかもしれませんし、停止できなくなったり、
+システムリソースを食い過ぎるかもしれません。
 
-<p>The internal state of a greenlet is generally a time-dependent
-parameter. There are a number of flags on greenlets which let
-you monitor the state of the thread</p>
+greenlet の内部状態は基本的に時間とともに変化するパラメーターになります。
+greenlet の状態をモニターするための幾つかのフラグがあります。
 
 - ``started`` -- Boolean, indicates whether the Greenlet has been started. </li>
 - ``ready()`` -- Boolean, indicates whether the Greenlet has halted</li>
 - ``successful()`` -- Boolean, indicates whether the Greenlet has halted and not thrown an exception</li>
 - ``value`` -- arbitrary, the value returned by the Greenlet</li>
 - ``exception`` -- exception, uncaught exception instance thrown inside the greenlet</li>
+- 
+- ``started`` -- bool値: greenlet が開始しているかどうか.
+- ``ready()`` -- bool値, greenlet が停止(halt)しているかどうか.
+- ``successful()`` -- bool値, greenlet が例外を投げずに終了したかどうか.
+- ``value`` -- 任意の値, greenlet が返した値.
+- ``exception`` -- 例外, greenlet 内で投げられた例外.
 
 [[[cog
 import gevent
@@ -409,13 +414,13 @@ print(loser.exception)
 
 ## Program Shutdown
 
-Greenlets that fail to yield when the main program receives a
-SIGQUIT may hold the program's execution longer than expected.
-This results in so called "zombie processes" which need to be
-killed from outside of the Python interpreter.
+メインプログラムが SIGQUIT を受信した時に yield しない greenlet
+がプログラムを実行させ続ける可能性があります。
+この状態は "ゾンビプロセス" と呼ばれ、 Python インタープリターの
+外から kill してやる必要があります。
 
-A common pattern is to listen SIGQUIT events on the main program
-and to invoke ``gevent.shutdown`` before exit.
+一般的なパターンはメインプログラムが SIGQUIT イベントを受信して、
+exit する前に ``gevent.shutdown`` を呼び出すことです。
 
 <pre>
 <code class="python">import gevent
@@ -433,8 +438,7 @@ if __name__ == '__main__':
 
 ## Timeouts
 
-Timeouts are a constraint on the runtime of a block of code or a
-Greenlet.
+タイムアウトとは、コードブロックや greenlet の実行時間に対する制約です。
 
 <pre>
 <code class="python">
@@ -457,7 +461,7 @@ except Timeout:
 </code>
 </pre>
 
-Or with a context manager in a ``with`` a statement.
+もしくはコンテキストマネージャーとして ``with`` 文を使います。
 
 <pre>
 <code class="python">import gevent
