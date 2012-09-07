@@ -899,10 +899,11 @@ gevent.joinall([ping, pong])
 
 ## Gevent ZeroMQ
 
-[ZeroMQ](http://www.zeromq.org/) is described by its authors as
-"a socket library that acts as a concurrency framework". It is a
-very powerful messaging layer for building concurrent and
-distributed applications. 
+製作者によれば、 [ZeroMQ](http://www.zeromq.org/) は
+"並行フレームワークのように振る舞うソケットライブラリ"
+ということです。
+並行・分散アプリケーションを作るときに、非常に強力な
+メッセージングレイヤーになります。
 
 ZeroMQ provides a variety of socket primitives, the simplest of
 which being a Request-Response socket pair. A socket has two
@@ -912,6 +913,16 @@ library by [Travis Cline](https://github.com/traviscline) which
 uses gevent.socket to poll ZeroMQ sockets in a non-blocking
 manner.  You can install gevent-zeromq from PyPi via:  ``pip install
 gevent-zeromq``
+ZeroMQ はたくさんの種類の socket プリミティブを提供しています。
+一番シンプルなものは リクエスト-レスポンス ペアです。
+この socket は ``send`` と ``recv`` というメソッドを持っていて、どちらも
+通常はブロックします。しかし [Travis Cline](https://github.com/traviscline) が
+gevent.socket を使って ZeroMQ socket をノンブロッキングにポーリングするように
+してくれました。 ``pip install gevent-zeromq`` でインストールできます。
+
+(訳注: これは pyzmq に取り込まれ、最新版の pyzmq では pyzmq.green を
+import して利用することができます。)
+
 
 [[[cog
 # Note: Remember to ``pip install pyzmq gevent_zeromq``
@@ -972,20 +983,21 @@ server.serve_forever()
 
 ## WSGI Servers
 
-Gevent provides two WSGI servers for serving content over HTTP.
-Henceforth called ``wsgi`` and ``pywsgi``:
+gevent は HTTP のための2種類の WSGI サーバーを提供しています。
+``wsgi`` と ``pywsgi`` です。
 
 * gevent.wsgi.WSGIServer
 * gevent.pywsgi.WSGIServer
 
-In earlier versions of gevent before 1.0.x, gevent used libevent
-instead of libev. Libevent included a fast HTTP server which was
-used by gevent's ``wsgi`` server. 
+gevent 1.0 より前のバージョンでは、 gevent は libev の代わりに libevent
+を利用していました。 libevent は高速な HTTP サーバーを持っており、
+gevent の `wsgi` サーバーで利用されていました。
 
-In gevent 1.0.x there is no http server included. Instead
-``gevent.wsgi`` is now an alias for the pure Python server in
-``gevent.pywsgi``.
+gevent 1.0 からは libev が http サーバーを持っていないので、
+``gevent.wsgi`` はピュアPythonで実装された ``gevent.pywsgi`` への
+ただのエイリアスになっています。
 
+<!--
 
 ## Streaming Servers
 
@@ -1067,6 +1079,8 @@ for comparison with other servers.
 </code>
 </pre> 
 
+-->
+
 ## Long Polling
 
 <pre>
@@ -1108,7 +1122,8 @@ WSGIServer(('', 8000), ajax_endpoint).serve_forever()
 ## Websockets
 
 Websocket example which requires <a href="https://bitbucket.org/Jeffrey/gevent-websocket/src">gevent-websocket</a>.
-
+Websocket のサンプルは [gevent-websocket](https://bitbucket.org/Jeffrey/gevent-websocket/src)
+を利用しています。
 
 <pre>
 <code class="python"># Simple gevent-websocket server
@@ -1174,10 +1189,11 @@ HTML Page:
 
 ## Chat Server
 
-The final motivating example, a realtime chat room. This example
-requires <a href="http://flask.pocoo.org/">Flask</a> ( but not neccesarily so, you could use Django,
-Pyramid, etc ). The corresponding Javascript and HTML files can
-be found <a href="https://github.com/sdiehl/minichat">here</a>.
+最後に意欲的なサンプルとして、リアルタイムチャットルームを作ります。
+このサンプルは [Flask](http://flask.pocoo.org/) を利用しています。
+(代わりに Django や Pyramid を使ってもいいですよ！)
+必要な JavaScript と HTML ファイルは [ここ](https://github.com/sdiehl/minichat)
+にあります。
 
 
 <pre>
