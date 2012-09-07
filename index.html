@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="http://yandex.st/highlightjs/6.0/styles/github.min.css">
     <link href='http://fonts.googleapis.com/css?family=Droid+Sans:400,700|Droid+Serif:400,400italic|Inconsolata' rel='stylesheet'>
     <script>hljs.initHighlightingOnLoad();</script>
-    <title>Gevent Tutorial</title>
+    <title>Gevent チュートリアル</title>
 </head>
 <style>
     body {
@@ -156,7 +156,7 @@ gevent は <a href="http://software.schmorp.de/pkg/libev.html">libev</a> を元�
 <li><a href="#timeouts">Timeouts</a></li>
 </ul>
 </li>
-<li><a href="#data-structures">Data Structures</a><ul>
+<li><a href="#_4">データ構造</a><ul>
 <li><a href="#events">Events</a></li>
 <li><a href="#queues">Queues</a></li>
 <li><a href="#groups-and-pools">Groups and Pools</a></li>
@@ -347,16 +347,16 @@ Task 7 done
 Task 8 done
 Task 9 done
 Asynchronous:
-Task 0 done
-Task 1 done
 Task 2 done
-Task 3 done
-Task 6 done
-Task 9 done
 Task 8 done
+Task 9 done
 Task 7 done
-Task 4 done
+Task 6 done
 Task 5 done
+Task 0 done
+Task 4 done
+Task 3 done
+Task 1 done
 </pre></code></p>
 <p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
 メインプログラムは各タスクを実行している間 <em>ブロックする</em>
@@ -664,8 +664,8 @@ with Timeout(time_to_wait, TooLong):
 </code>
 </pre>
 
-<p>In addition, gevent also provides timeout arguments for a
-variety of Greenlet and data stucture related calls. For example:</p>
+<p>加えて、 gevent は多くの greenlet やデータ構造に関する関数に timeout
+引数を提供しています。例えば:</p>
 <pre><code class="python">
 import gevent
 from gevent import Timeout
@@ -706,10 +706,9 @@ Thread 1 timed out
 Thread 2 timed out
 Thread 3 timed out
 </pre></code></p>
-<h1 id="data-structures">Data Structures</h1>
+<h1 id="_4">データ構造</h1>
 <h2 id="events">Events</h2>
-<p>Events are a form of asynchronous communication between
-Greenlets.</p>
+<p>イベントは greenlet 間の非同期通信の一つです。</p>
 <pre>
 <code class="python">import gevent
 from gevent.event import AsyncResult
@@ -739,11 +738,10 @@ gevent.joinall([
 </code>
 </pre>
 
-<p>A extension of the Event object is the AsyncResult which
-allows you to send a value along with the wakeup call. This is
-sometimes called a future or a deferred, since it holds a 
-reference to a future value that can be set on an arbitrary time
-schedule.</p>
+<p>Event オブジェクトの拡張の AsyncResult を使うと、モーニングコール
+(wakeup call) 付きの値を送ることができます。
+これは将来どこかのタイミングで設定される値に対する参照を持っているので、
+future とか deferred と呼ばれることもあります。</p>
 <pre>
 <code class="python">import gevent
 from gevent.event import AsyncResult
@@ -772,12 +770,10 @@ gevent.joinall([
 </pre>
 
 <h2 id="queues">Queues</h2>
-<p>Queues are ordered sets of data that have the usual <code>put</code> / <code>get</code>
-operations but are written in a way such that they can be safely
-manipulated across Greenlets.</p>
-<p>For example if one Greenlet grabs an item off of the queue, the
-same item will not grabbed by another Greenlet executing
-simultaneously.</p>
+<p>キューはデータの順序付き集合で、標準的な <code>put / get</code> 操作を持っています。
+これは greenlet をまたいで安全に操作できるように実装されています。</p>
+<p>例えば、ある greenlet がキューから要素を取得した時、同じ要素が並行して
+動いている他の greenlet でも取得されることはありません。</p>
 <pre><code class="python">
 import gevent
 from gevent.queue import Queue
@@ -835,21 +831,18 @@ Quitting time!
 Quitting time!
 Quitting time!
 </pre></code></p>
-<p>Queues can also block on either <code>put</code> or <code>get</code> as the need arises. </p>
-<p>Each of the <code>put</code> and <code>get</code> operations has a non-blocking
-counterpart, <code>put_nowait</code> and 
-<code>get_nowait</code> which will not block, but instead raise
-either <code>gevent.queue.Empty</code> or
-<code>gevent.queue.Full</code> in the operation is not possible.</p>
-<p>In this example we have the boss running simultaneously to the
-workers and have a restriction on the Queue that it can contain no
-more than three elements. This restriction means that the <code>put</code>
-operation will block until there is space on the queue.
-Conversely the <code>get</code> operation will block if there are
-no elements on the queue to fetch, it also takes a timeout
-argument to allow for the queue to exit with the exception
-<code>gevent.queue.Empty</code> if no work can found within the
-time frame of the Timeout.</p>
+<p>キューは必要があれば <code>put</code> でも <code>get</code> でもブロックすることがあります。</p>
+<p><code>put</code> と <code>get</code> にはそれぞれブロックしないバージョンとして
+それぞれ <code>put_nowait</code> と <code>get_nowait</code> が用意されています。
+これらの操作は実行できない場合はブロックする代わりに
+<code>gevent.queue.Empty</code> か <code>gevent.queue.Full</code> 例外を発生させます。</p>
+<p>次の例では、並行して動いている boss と複数の worker がいて、
+3要素以上格納できない制限付きのキューがあります。
+この制限により、キューに空きが無いときは空きができるまで <code>put</code>
+操作がブロックして、キューが空の場合は要素が格納されるまで <code>get</code>
+操作がブロックします。
+<code>get</code> には timeout 引数を設定して、その時間内に要素を取得できない
+場合は <code>gevent.queue.Empty</code> 例外を発生させて終了します。</p>
 <pre><code class="python">
 import gevent
 from gevent.queue import Queue, Empty
@@ -915,9 +908,8 @@ Quitting time!
 Quitting time!
 </pre></code></p>
 <h2 id="groups-and-pools">Groups and Pools</h2>
-<p>A group is a collection of running greenlets which are managed
-and scheduled together as group. It also doubles as parallel
-dispatcher that mirrors the Python <code>multiprocessing</code> library.</p>
+<p>グループとは、複数の greenlet をまとめてスケジュールしたり管理するものです。
+Python の <code>multiprocessing</code> ライブラリの並列ディスパッチを置き換える用途にも使えます。</p>
 <pre><code class="python">
 import gevent
 from gevent.pool import Group
@@ -951,11 +943,9 @@ bar
 bar
 bar
 </pre></code></p>
-<p>This is very usefull for managing groups of asynchronous tasks
-that.</p>
-<p>As mentioned above Group also provides an API for dispatching
-jobs to grouped greenlets and collecting their results in various
-ways.</p>
+<p>これは非同期なタスクのグループを管理するのに便利です。</p>
+<p>上で述べたように、 Group はグループ化された greenlet に対してジョブを
+ディスパッチし、その結果をいろいろな方法で取得するためのAPIを提供しています。</p>
 <pre><code class="python">
 import gevent
 from gevent import getcurrent
@@ -990,11 +980,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 4306252176
+Hello from Greenlet 4368540048
 Size of group 2
-Hello from Greenlet 4306254576
+Hello from Greenlet 4368542448
 Size of group 1
-Hello from Greenlet 4306233136
+Hello from Greenlet 4368521008
 Ordered
 ('task', 0)
 ('task', 1)
@@ -1004,10 +994,9 @@ Unordered
 ('task', 1)
 ('task', 0)
 </pre></code></p>
-<p>A pool is a structure designed for handling dynamic numbers of
-greenlets which need to be concurrency-limited.  This is often
-desirable in cases where one wants to do many network or IO bound
-tasks in parallel.</p>
+<p>pool は並行数を制限しながら動的な数の greenlet を扱うためのものです。
+たくさんのネットワークやIOバウンドのタスクを並列に実行したい場合に
+最適です。</p>
 <pre><code class="python">
 import gevent
 from gevent import getcurrent
@@ -1029,7 +1018,10 @@ Size of pool 1
 </pre></code></p>
 <p>Often when building gevent driven services one will center the
 entire service around a pool structure. An example might be a
-class which polls on various sockets.</p>
+class which polls on various sockets.
+gevent を使ったサービスを作るときに、よく中央に pool を持った
+構成で設計します。
+例えばたくさんのソケットをポーリングするクラスです。</p>
 <pre>
 <code class="python">from gevent.pool import Pool
 
@@ -1056,13 +1048,11 @@ class SocketPool(object):
 </pre>
 
 <h2 id="locks-and-semaphores">Locks and Semaphores</h2>
-<p>A semaphore is a low level synchronization primitive that allows
-greenlets to coordinate and limit concurrent access or execution. A
-semaphore exposes two methods, <code>acquire</code> and <code>release</code> The
-difference between the number of times and a semaphore has been
-acquired and released is called the bound of the semaphore. If a
-semaphore bound reaches 0 it will block until another greenlet
-releases its acquisition.</p>
+<p>セマフォ(Semaphore) は greenlet に並行アクセスや並行実行を調整する低レベルな
+同期機構です。
+セマフォは <code>acquire</code> と <code>release</code> というメソッドを提供しています。
+<code>acquire</code> と <code>release</code> の呼び出された回数のをセマフォの bound と呼びます。
+bound が0になると、他の greenlet が <code>release</code> するまでブロックします。</p>
 <pre><code class="python">
 from gevent import sleep
 from gevent.pool import Pool
@@ -1101,10 +1091,10 @@ Worker 5 released semaphore
 Worker 3 acquired semaphore
 Worker 3 released semaphore
 </pre></code></p>
-<p>A semaphore with bound of 1 is known as a Lock. it provides
-exclusive execution to one greenlet. They are often used to
-ensure that resources are only in use at one time in the context
-of a program.</p>
+<p>bound が 1 のセマフォのことをロック(Lock)と言います。
+ロックを使うと一つの greenlet だけを実行可能にすることができます。
+プログラムのコンテキストでなにかのリソースを並行して複数の greenlet
+から使わないようにするために利用されます。</p>
 <h2 id="thread-locals">Thread Locals</h2>
 <h2 id="actors">Actors</h2>
 <p>The actor model is a higher level concurrency model popularized
