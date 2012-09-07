@@ -997,17 +997,13 @@ gevent 1.0 からは libev が http サーバーを持っていないので、
 ``gevent.wsgi`` はピュアPythonで実装された ``gevent.pywsgi`` への
 ただのエイリアスになっています。
 
-<!--
-
 ## Streaming Servers
 
-**If you are using gevent 1.0.x, this section does not apply**
+ストリーミングHTTPサービスを実現するには、まず HTTP ヘッダにコンテンツの
+サイズを出力するのをやめます。その代わりに接続をつないだままにしておき、
+データチャンクの先頭にそのチャンクの大きさを示す hex digit をつけて
+送信します。サイズが0のチャンクを送るとストリームが終了します。
 
-For those familiar with streaming HTTP services, the core idea is
-that in the headers we do not specify a length of the content. We
-instead hold the connection open and flush chunks down the pipe,
-prefixing each with a hex digit indicating the length of the
-chunk. The stream is closed when a size zero chunk is sent.
 
     HTTP/1.1 200 OK
     Content-Type: text/plain
@@ -1021,31 +1017,9 @@ chunk. The stream is closed when a size zero chunk is sent.
 
     0
 
-The above HTTP connection could not be created in wsgi
-because streaming is not supported. It would instead have to
-buffered.
-
-<pre>
-<code class="python">from gevent.wsgi import WSGIServer
-
-def application(environ, start_response):
-    status = '200 OK'
-    body = '&lt;p&gt;Hello World&lt;/p&gt;'
-
-    headers = [
-        ('Content-Type', 'text/html')
-    ]
-
-    start_response(status, headers)
-    return [body]
-
-WSGIServer(('', 8000), application).serve_forever()
-
-</code>
-</pre> 
-
-Using pywsgi we can however write our handler as a generator and
-yield the result chunk by chunk.
+pywsgi (gevent 1.0 以降は gevent.wsgi でも同じ) を使うと、ハンドラを
+ジェネレータとして作成しチャンクを yield していくことでストリーミング
+を実現できます。
 
 <pre>
 <code class="python">from gevent.pywsgi import WSGIServer
@@ -1065,21 +1039,6 @@ WSGIServer(('', 8000), application).serve_forever()
 
 </code>
 </pre> 
-
-But regardless, performance on Gevent servers is phenomenal
-compared to other Python servers. libev is a very vetted technology
-and its derivative servers are known to perform well at scale.
-
-To benchmark, try Apache Benchmark ``ab`` or see this 
-[Benchmark of Python WSGI Servers](http://nichol.as/benchmark-of-python-web-servers) 
-for comparison with other servers.
-
-<pre>
-<code class="shell">$ ab -n 10000 -c 100 http://127.0.0.1:8000/
-</code>
-</pre> 
-
--->
 
 ## Long Polling
 

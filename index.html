@@ -169,6 +169,7 @@ gevent は <a href="http://software.schmorp.de/pkg/libev.html">libev</a> を元�
 <li><a href="#gevent-zeromq">Gevent ZeroMQ</a></li>
 <li><a href="#simple-telnet-servers">Simple Telnet Servers</a></li>
 <li><a href="#wsgi-servers">WSGI Servers</a></li>
+<li><a href="#streaming-servers">Streaming Servers</a></li>
 <li><a href="#long-polling">Long Polling</a></li>
 <li><a href="#websockets">Websockets</a></li>
 <li><a href="#chat-server">Chat Server</a></li>
@@ -346,16 +347,16 @@ Task 7 done
 Task 8 done
 Task 9 done
 Asynchronous:
-Task 3 done
-Task 6 done
+Task 1 done
 Task 8 done
+Task 6 done
+Task 0 done
 Task 9 done
 Task 7 done
-Task 2 done
-Task 0 done
 Task 5 done
 Task 4 done
-Task 1 done
+Task 3 done
+Task 2 done
 </pre></code></p>
 <p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
 メインプログラムは各タスクを実行している間 <em>ブロックする</em>
@@ -979,11 +980,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 4319846800
+Hello from Greenlet 4374397328
 Size of group 2
-Hello from Greenlet 4319849200
+Hello from Greenlet 4374399728
 Size of group 1
-Hello from Greenlet 4319827760
+Hello from Greenlet 4374378288
 Ordered
 ('task', 0)
 ('task', 1)
@@ -1267,56 +1268,26 @@ gevent の <code>wsgi</code> サーバーで利用されていました。</p>
 <p>gevent 1.0 からは libev が http サーバーを持っていないので、
 <code>gevent.wsgi</code> はピュアPythonで実装された <code>gevent.pywsgi</code> への
 ただのエイリアスになっています。</p>
-<!--
+<h2 id="streaming-servers">Streaming Servers</h2>
+<p>ストリーミングHTTPサービスを実現するには、まず HTTP ヘッダにコンテンツの
+サイズを出力するのをやめます。その代わりに接続をつないだままにしておき、
+データチャンクの先頭にそのチャンクの大きさを示す hex digit をつけて
+送信します。サイズが0のチャンクを送るとストリームが終了します。</p>
+<pre><code>HTTP/1.1 200 OK
+Content-Type: text/plain
+Transfer-Encoding: chunked
 
-## Streaming Servers
+8
+&lt;p&gt;Hello
 
-**If you are using gevent 1.0.x, this section does not apply**
+9
+World&lt;/p&gt;
 
-For those familiar with streaming HTTP services, the core idea is
-that in the headers we do not specify a length of the content. We
-instead hold the connection open and flush chunks down the pipe,
-prefixing each with a hex digit indicating the length of the
-chunk. The stream is closed when a size zero chunk is sent.
-
-    HTTP/1.1 200 OK
-    Content-Type: text/plain
-    Transfer-Encoding: chunked
-
-    8
-    <p>Hello
-
-    9
-    World</p>
-
-    0
-
-The above HTTP connection could not be created in wsgi
-because streaming is not supported. It would instead have to
-buffered.
-
-<pre>
-<code class="python">from gevent.wsgi import WSGIServer
-
-def application(environ, start_response):
-    status = '200 OK'
-    body = '&lt;p&gt;Hello World&lt;/p&gt;'
-
-    headers = [
-        ('Content-Type', 'text/html')
-    ]
-
-    start_response(status, headers)
-    return [body]
-
-WSGIServer(('', 8000), application).serve_forever()
-
-</code>
-</pre> 
-
-Using pywsgi we can however write our handler as a generator and
-yield the result chunk by chunk.
-
+0
+</code></pre>
+<p>pywsgi (gevent 1.0 以降は gevent.wsgi でも同じ) を使うと、ハンドラを
+ジェネレータとして作成しチャンクを yield していくことでストリーミング
+を実現できます。</p>
 <pre>
 <code class="python">from gevent.pywsgi import WSGIServer
 
@@ -1334,22 +1305,7 @@ def application(environ, start_response):
 WSGIServer(('', 8000), application).serve_forever()
 
 </code>
-</pre> 
-
-But regardless, performance on Gevent servers is phenomenal
-compared to other Python servers. libev is a very vetted technology
-and its derivative servers are known to perform well at scale.
-
-To benchmark, try Apache Benchmark ``ab`` or see this 
-[Benchmark of Python WSGI Servers](http://nichol.as/benchmark-of-python-web-servers) 
-for comparison with other servers.
-
-<pre>
-<code class="shell">$ ab -n 10000 -c 100 http://127.0.0.1:8000/
-</code>
-</pre> 
-
--->
+</pre>
 
 <h2 id="long-polling">Long Polling</h2>
 <pre>
