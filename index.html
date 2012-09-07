@@ -2,8 +2,8 @@
 <html>
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <script src="highlight.min.js"></script>
-    <link rel="stylesheet" href="github.min.css">
+    <script src="http://yandex.st/highlightjs/6.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="http://yandex.st/highlightjs/6.0/styles/github.min.css">
     <link href='http://fonts.googleapis.com/css?family=Droid+Sans:400,700|Droid+Serif:400,400italic|Inconsolata' rel='stylesheet'>
     <script>hljs.initHighlightingOnLoad();</script>
     <title>Gevent Tutorial</title>
@@ -138,14 +138,17 @@ gevent is a concurrency library based around <a href="http://software.schmorp.de
 
 <div class="toc">
 <ul>
-<li><a href="#introduction">Introduction</a><ul>
-<li><a href="#contributors">Contributors</a></li>
+<li><a href="#">はじめに</a><ul>
+<li><a href="#_1">寄稿者</a><ul>
+<li><a href="#_2">日本語訳について</a></li>
 </ul>
 </li>
-<li><a href="#core">Core</a><ul>
+</ul>
+</li>
+<li><a href="#_3">コア</a><ul>
 <li><a href="#greenlets">Greenlets</a></li>
 <li><a href="#synchronous-asynchronous-execution">Synchronous &amp; Asynchronous Execution</a></li>
-<li><a href="#determinism">Determinism</a></li>
+<li><a href="#determinism">決定論(determinism)</a></li>
 <li><a href="#spawning-threads">Spawning Threads</a></li>
 <li><a href="#greenlet-state">Greenlet State</a></li>
 <li><a href="#program-shutdown">Program Shutdown</a></li>
@@ -173,15 +176,15 @@ gevent is a concurrency library based around <a href="http://software.schmorp.de
 </li>
 </ul>
 </div>
-<h1 id="introduction">Introduction</h1>
-<p>The structure of this tutorial assumes an intermediate level
-knowledge of Python but not much else. No knowledge of
-concurrency is expected. The goal is to give you
-the tools you need to get going with gevent, help you tame
-your existing concurrency problems and start writing asynchronous
-applications today.</p>
-<h3 id="contributors">Contributors</h3>
-<p>In chronological order of contribution: 
+<h1 id="">はじめに</h1>
+<p>このチュートリアルはある程度の Python の知識を前提としていますが、
+それ以上の知識は前提としていません。
+並列プログラミングの知識も必要ありません。
+このチュートリアルの目的は、 gevent を扱う道具を提供し、
+読者がすでに持っている一般的な並列プログラミングの問題を手なづけて
+非同期プログラムを書き始められるように手助けすることです。</p>
+<h3 id="_1">寄稿者</h3>
+<p>時系列順の寄稿者:
 <a href="http://www.stephendiehl.com">Stephen Diehl</a>
 <a href="https://github.com/jerem">J&eacute;r&eacute;my Bethmont</a>
 <a href="https://github.com/sww">sww</a>
@@ -193,31 +196,37 @@ applications today.</p>
 <a href="https://github.com/ehebert">Eddie Hebert</a>
 <a href="http://notmyidea.org">Alexis Metaireau</a>
 <a href="https://github.com/djv">Daniel Velkov</a></p>
-<p>This is a collaborative document published under MIT license.
-Have something to add? See a typo? Fork and issue a
-pull request <a href="https://github.com/sdiehl/gevent-tutorial">Github</a>.
-Any and all contributions are welcome.</p>
-<h1 id="core">Core</h1>
+<p>この共同作業によるドキュメントは MIT ライセンスにて公開されています。
+何か追記したいことがあったり、タイプミスを発見した場合は、
+<a href="https://github.com/sdiehl/gevent-tutorial">Github</a> で fork して pull
+request を送ってください。その他のどんな貢献も歓迎します。</p>
+<h3 id="_2">日本語訳について</h3>
+<p>時系列順の翻訳者:
+<a href="http://github.com/methane">methane</a></p>
+<p>翻訳は <a href="http://github.com/methane/gevent-tutorial-ja">gevent-tutorial-ja</a>
+で行なっています。
+翻訳に対する修正依頼等はこちらにお願いします.</p>
+<h1 id="_3">コア</h1>
 <h2 id="greenlets">Greenlets</h2>
-<p>The primary pattern used in gevent is the <strong>Greenlet</strong>, a
-lightweight coroutine provided to Python as a C extension module.
-Greenlets all run inside of the OS process for the main
-program but are scheduled cooperatively. </p>
+<p>gevent で使われている一番重要なパターンが <strong>Greenlet</strong> という
+Python のC拡張の形で提供された軽量なコルーチンです。
+すべての Greenlet はメインプログラムのOSプロセス内で実行されますが、
+協調的にスケジューリングされます.</p>
 <blockquote>
-<p>Only one greenlet is ever running at any given time.</p>
+<p>Only one greenlet is ever running at any given time.
+(どの時点をとっても常にひとつの greenlet だけが動いている)</p>
 </blockquote>
-<p>This differs from any of the real parallelism constructs provided by
-<code>multiprocessing</code> or <code>threading</code> libraries which do spin processes
-and POSIX threads which are scheduled by the operating system and
-are truly parallel.</p>
+<p>これは、 <code>multiprocessing</code> や <code>threading</code> が提供している、
+OS がスケジューリングして本当に並列に動くプロセスや POSIX スレッドを利用した 
+並列機構とは異なるものです。</p>
 <h2 id="synchronous-asynchronous-execution">Synchronous &amp; Asynchronous Execution</h2>
-<p>The core idea of concurrency is that a larger task can be broken down
-into a collection of subtasks whose and scheduled to run simultaneously
-or <em>asynchronously</em>, instead of one at a time or <em>synchronously</em>. A
-switch between the two subtasks is known as a <em>context switch</em>.</p>
-<p>A context switch in gevent is done through <em>yielding</em>. In this case
-example we have two contexts which yield to each other through invoking
-<code>gevent.sleep(0)</code>.</p>
+<p>並行プログラムのコアとなる考え方は、大きいタスクは小さいサブタスクに分割して、
+それらを1つずつ、あるいは <em>同期的に</em> 動かす代わりに、同時に、あるいは
+<em>非同期に</em> 動かすことです。
+2つのサブタスク間の切り替えは <em>コンテキストスイッチ</em> と呼ばれます。</p>
+<p>gevent のコンテキストスイッチは <em>譲渡(yield)</em> によって行われます。
+次の例では、2つのコンテキストが <code>gevent.sleep(0)</code> を実行することにより
+お互いに譲渡しています。</p>
 <pre><code class="python">
 import gevent
 
@@ -239,22 +248,22 @@ gevent.joinall([
 
 <p></code>
 <pre><code class="python">
-Running in foo
 Explicit context to bar
+Running in foo
 Explicit context switch to foo again
 Implicit context switch back to bar
 </pre></code></p>
-<p>It is illuminating to visualize the control flow of the program or walk
-through it with a debugger to see the context switches as they occur.</p>
+<p>次の制御フローを視覚化した画像を見るか、このサンプルプログラムを
+デバッガーでステップ実行してコンテキストスイッチが起こる様子を確認してください。</p>
 <p><img alt="Greenlet Control Flow" src="flow.gif" /></p>
-<p>The real power of gevent comes when we use it for network and IO
-bound functions which can be cooperatively scheduled. Gevent has
-taken care of all the details to ensure that your network
-libraries will implicitly yield their greenlet contexts whenever
-possible. I cannot stress enough what a powerful idiom this is.
-But maybe an example will illustrate.</p>
-<p>In this case the <code>select()</code> function is normally a blocking
-call that polls on various file descriptors.</p>
+<p>gevent が本当の力を発揮するのは、ネットワークやIOバウンドの、協調的に
+スケジュールできる関数を実行するために利用する場合です。
+gevent はすべての詳細部分の面倒を見て、可能な限りネットワークライブラリが
+暗黙的に greenlet コンテキストを譲渡するようにします。
+私はこれがどれだけ強力な方法なのかをうまく強調することができません。
+でも、次の例が示してくれると思います。</p>
+<p>この例では、 <code>select()</code> 関数は通常ブロックする関数で、複数の
+ファイルディスクリプタをポーリングします。</p>
 <pre><code class="python">
 import time
 import gevent
@@ -288,18 +297,16 @@ gevent.joinall([
 
 <p></code>
 <pre><code class="python">
-Started Polling:  at 0.0 seconds
-Started Polling:  at 0.0 seconds
 Hey lets do some stuff while the greenlets poll, at at 0.0 seconds
+Started Polling:  at 0.0 seconds
+Started Polling:  at 0.0 seconds
 Ended Polling:  at 2.0 seconds
 Ended Polling:  at 2.0 seconds
 </pre></code></p>
-<p>Another somewhat synthetic example defines a <code>task</code> function
-which is <em>non-deterministic</em>
-(i.e. its output is not guaranteed to give the same result for
-the same inputs). In this case the side effect of running the
-function is that the task pauses its execution for a random
-number of seconds.</p>
+<p>もう一つのすこし人工的な例として、 <em>非決定論的な</em> (同じ入力に対して
+出力が同じになるとは限らない) <code>task</code> 関数を定義しています。
+この例では、 <code>task</code> 関数を実行すると副作用としてランダムな秒数だけ
+タスクの実行を停止します。</p>
 <pre><code class="python">
 import gevent
 import random
@@ -308,7 +315,7 @@ def task(pid):
     """
     Some non-deterministic task
     """
-    gevent.sleep(random.randint(0,2)*0.001)
+    gevent.sleep(random.randint(0,2))
     print('Task', pid, 'done')
 
 def synchronous():
@@ -339,39 +346,34 @@ Task 7 done
 Task 8 done
 Task 9 done
 Asynchronous:
-Task 9 done
-Task 6 done
-Task 3 done
-Task 4 done
-Task 8 done
 Task 5 done
-Task 1 done
-Task 7 done
-Task 0 done
+Task 6 done
 Task 2 done
+Task 9 done
+Task 8 done
+Task 7 done
+Task 4 done
+Task 3 done
+Task 1 done
+Task 0 done
 </pre></code></p>
-<p>In the synchronous case all the tasks are run sequentially,
-which results in the main program <em>blocking</em> (
-i.e. pausing the execution of the main program )
-while each task executes.</p>
-<p>The important parts of the program are the
-<code>gevent.spawn</code> which wraps up the given function
-inside of a Greenlet thread. The list of initialized greenlets 
-are stored in the array <code>threads</code> which is passed to
-the <code>gevent.joinall</code> function which blocks the current
-program to run all the given greenlets. The execution will step
-forward only when all the greenlets terminate.</p>
-<p>The important fact to notice is that the order of execution in
-the async case is essentially random and that the total execution
-time in the async case is much less than the sync case. In fact
-the maximum time for the synchronous case to complete is when
-each tasks pauses for 2 seconds resulting in a 20 seconds for the
-whole queue. In the async case the maximum runtime is roughly 2
-seconds since none of the tasks block the execution of the
-others.</p>
-<p>A more common use case, fetching data from a server
-asynchronously, the runtime of <code>fetch()</code> will differ between
-requests given the load on the remote server.</p>
+<p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
+メインプログラムは各タスクを実行している間 <em>ブロックする</em>
+(メインプログラムの実行が停止される) ことになります。</p>
+<p>このプログラムの重要な部分は、与えられた関数を greenlet スレッドの中に
+ラップする <code>gevent.spawn</code> です。
+生成された greenlet のリストが <code>threads</code> 配列に格納され、
+<code>gevent.joinall</code> 関数に渡されます。この関数は今のプログラムを、与えられた
+すべての greenlet を実行するためにブロックします。
+すべての greenlet が終了した時に次のステップが実行されます。</p>
+<p>注意すべき重要な点として、非同期に実行した場合の実行順序は本質的に
+ランダムであり、トータルの実行時間は同期的に実行した場合よりもずっと
+短くなります。実際、各タスクが2秒ずつ停止すると、同期的に実行した場合は
+すべてのタスクを実行するのに20秒かかりますが、非同期に実行した場合は
+各タスクが他のタスクの実行を止めないのでだいたい2秒で終了します。</p>
+<p>もっと一般的なユースケースとして、サーバーからデータを非同期に取得します。
+<code>fetch()</code> の実行時間はリモートサーバーの負荷などによってリクエストごとに
+異なります。</p>
 <pre><code class="python">import gevent.monkey
 gevent.monkey.patch_socket()
 
@@ -406,11 +408,11 @@ asynchronous()
 </code>
 </pre>
 
-<h2 id="determinism">Determinism</h2>
-<p>As mentioned previously, greenlets are deterministic. Given the same
-configuration of greenlets and the same set of inputs and they always
-produce the same output. For example let's spread a task across a
-multiprocessing pool compared to a gevent pool.</p>
+<h2 id="determinism">決定論(determinism)</h2>
+<p>先に触れたように、 greenlet は決定論的に動作します。
+同じように設定した greenlets があって、同じ入力が与えられた場合、
+必ず同じ結果になります。例として、タスクを multiprocessing の pool に
+与えた場合と gevent pool に与えた場合を比較します。</p>
 <pre>
 <code class="python">
 import time
@@ -450,26 +452,25 @@ print( run1 == run2 == run3 == run4 )
 True</code>
 </pre>
 
-<p>Even though gevent is normally deterministic, sources of
-non-determinism can creep into your program when you begin to
-interact with outside services such as sockets and files. Thus
-even though green threads are a form of "deterministic
-concurrency", they still can experience some of the same problems
-that POSIX threads and processes experience.</p>
-<p>The perennial problem involved with concurrency is known as a
-<em>race condition</em>. Simply put is when two concurrent threads
-/ processes depend on some shared resource but also attempt to
-modify this value. This results in resources whose values become
-time-dependent on the execution order. This is a problem, and in
-general one should very much try to avoid race conditions since
-they result program behavior which is globally
-non-deterministic.*</p>
-<p>The best approach to this is to simply avoid all global state all
-times. Global state and import-time side effects will always come
-back to bite you!</p>
+<p>gevent が通常決定論的だといっても、ソケットやファイルなどの外部の
+サービスとのやりとりを始めると非決定論的な入力がプログラムに入り込んできます。
+green スレッドが "決定論的な並行" であっても、 POSIX スレッドやプロセスを
+使った場合に起きる問題の一部が起こります。</p>
+<p>並行プログラミングにずっと付きまとう問題が
+<em>レースコンディション(race condition)</em> です。
+簡単に言うと、2つの並行するスレッドやプロセスが幾つかの共有リソース
+(訳注:グローバル変数など)に依存しており、しかもそれを変更しようとする問題です。
+結果としてそのリソースの状態は実行順序に依存してしまいます。
+一般的にプログラマーはこの問題を可能な限り避けようとするべきです。
+そうしないとプログラムのふるまいが全体として非決定性になってしまうからです。</p>
+<p>レースコンディションを避ける一番の方法は、常に、全てのグローバルな状態を避ける事です。
+グローバルな状態や import 時の副作用はいつでもあなたに噛みついてきます。
+(訳注: import 時の副作用は、 import 順序によってプログラムの動作を変えてしまう、
+Python でプログラミングをすると忘れた頃にハマる問題のタネです. 並行プログラミングとは
+無関係です)</p>
 <h2 id="spawning-threads">Spawning Threads</h2>
-<p>gevent provides a few wrappers around Greenlet initialization.
-Some of the most common patterns are:</p>
+<p>gevent は greenlet の初期化のラッパーを幾つか提供しています。
+幾つかのよくあるパターンは:</p>
 <pre><code class="python">
 import gevent
 from gevent import Greenlet
@@ -504,8 +505,8 @@ gevent.joinall(threads)
 Hello
 I live!
 </pre></code></p>
-<p>In addition to using the base Greenlet class, you may also subclass
-Greenlet class and overload the <code>_run</code> method.</p>
+<p>Greenlet クラスを直接使うだけでなく、 Greenlet のサブクラスを作って
+<code>_run</code> メソッドをオーバーライドすることもできます。</p>
 <pre><code class="python">
 import gevent
 from gevent import Greenlet
@@ -734,7 +735,7 @@ gevent.joinall([
 </code>
 </pre>
 
-<p>An extension of the Event object is the AsyncResult which
+<p>A extension of the Event object is the AsyncResult which
 allows you to send a value along with the wakeup call. This is
 sometimes called a future or a deferred, since it holds a 
 reference to a future value that can be set on an arbitrary time
@@ -802,30 +803,30 @@ gevent.joinall([
 
 <p></code>
 <pre><code class="python">
-Worker steve got task 1
+Worker nancy got task 1
 Worker john got task 2
-Worker nancy got task 3
+Worker steve got task 3
 Worker steve got task 4
-Worker nancy got task 5
-Worker john got task 6
-Worker steve got task 7
-Worker john got task 8
-Worker nancy got task 9
-Worker steve got task 10
+Worker john got task 5
+Worker nancy got task 6
+Worker nancy got task 7
+Worker steve got task 8
+Worker john got task 9
+Worker john got task 10
 Worker nancy got task 11
-Worker john got task 12
+Worker steve got task 12
 Worker steve got task 13
 Worker john got task 14
 Worker nancy got task 15
-Worker steve got task 16
-Worker nancy got task 17
+Worker nancy got task 16
+Worker steve got task 17
 Worker john got task 18
-Worker steve got task 19
-Worker john got task 20
-Worker nancy got task 21
+Worker john got task 19
+Worker nancy got task 20
+Worker steve got task 21
 Worker steve got task 22
-Worker nancy got task 23
-Worker john got task 24
+Worker john got task 23
+Worker nancy got task 24
 Quitting time!
 Quitting time!
 Quitting time!
@@ -835,7 +836,7 @@ Quitting time!
 counterpart, <code>put_nowait</code> and 
 <code>get_nowait</code> which will not block, but instead raise
 either <code>gevent.queue.Empty</code> or
-<code>gevent.queue.Full</code> if the operation is not possible.</p>
+<code>gevent.queue.Full</code> in the operation is not possible.</p>
 <p>In this example we have the boss running simultaneously to the
 workers and have a restriction on the Queue that it can contain no
 more than three elements. This restriction means that the <code>put</code>
@@ -885,33 +886,33 @@ gevent.joinall([
 <p></code>
 <pre><code class="python">
 Worker steve got task 1
-Worker john got task 2
-Worker bob got task 3
-Worker steve got task 4
+Worker bob got task 2
+Worker john got task 3
+Worker john got task 4
 Worker bob got task 5
-Worker john got task 6
+Worker steve got task 6
 Assigned all work in iteration 1
 Worker steve got task 7
 Worker john got task 8
 Worker bob got task 9
-Worker steve got task 10
-Worker bob got task 11
+Worker bob got task 10
+Worker steve got task 11
 Worker john got task 12
-Worker steve got task 13
-Worker john got task 14
-Worker bob got task 15
+Worker john got task 13
+Worker bob got task 14
+Worker steve got task 15
 Worker steve got task 16
-Worker bob got task 17
-Worker john got task 18
+Worker john got task 17
+Worker bob got task 18
 Assigned all work in iteration 2
-Worker steve got task 19
+Worker bob got task 19
 Quitting time!
 Quitting time!
 Quitting time!
 </pre></code></p>
 <h2 id="groups-and-pools">Groups and Pools</h2>
 <p>A group is a collection of running greenlets which are managed
-and scheduled together as group. It also doubles as a parallel
+and scheduled together as group. It also doubles as parallel
 dispatcher that mirrors the Python <code>multiprocessing</code> library.</p>
 <pre><code class="python">
 import gevent
@@ -936,19 +937,19 @@ group.join()
 
 <p></code>
 <pre><code class="python">
-bar
-bar
-bar
-foo
-foo
-foo
 fizz
 fizz
 fizz
+foo
+foo
+foo
+bar
+bar
+bar
 </pre></code></p>
-<p>This is very useful for managing groups of asynchronous tasks
-that run in parallel.</p>
-<p>As mentioned above, Group also provides an API for dispatching
+<p>This is very usefull for managing groups of asynchronous tasks
+that.</p>
+<p>As mentioned above Group also provides an API for dispatching
 jobs to grouped greenlets and collecting their results in various
 ways.</p>
 <pre><code class="python">
@@ -985,11 +986,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 140728641091376
-Size of group 3
-Hello from Greenlet 140728641090736
-Size of group 3
-Hello from Greenlet 140728641091696
+Hello from Greenlet 4561289616
+Size of group 2
+Hello from Greenlet 4561292016
+Size of group 1
+Hello from Greenlet 4561270576
 Ordered
 ('task', 0)
 ('task', 1)
@@ -1053,8 +1054,8 @@ class SocketPool(object):
 <h2 id="locks-and-semaphores">Locks and Semaphores</h2>
 <p>A semaphore is a low level synchronization primitive that allows
 greenlets to coordinate and limit concurrent access or execution. A
-semaphore exposes two methods, <code>acquire</code> and <code>release</code>.
-The difference between the number of times and a semaphore has been
+semaphore exposes two methods, <code>acquire</code> and <code>release</code> The
+difference between the number of times and a semaphore has been
 acquired and released is called the bound of the semaphore. If a
 semaphore bound reaches 0 it will block until another greenlet
 releases its acquisition.</p>
@@ -1085,18 +1086,18 @@ pool.map(worker2, xrange(3,6))
 
 <p></code>
 <pre><code class="python">
-Worker 0 acquired semaphore
 Worker 1 acquired semaphore
+Worker 0 acquired semaphore
 Worker 0 released semaphore
 Worker 1 released semaphore
-Worker 3 acquired semaphore
-Worker 4 acquired semaphore
-Worker 3 released semaphore
-Worker 4 released semaphore
 Worker 5 acquired semaphore
+Worker 4 acquired semaphore
+Worker 4 released semaphore
 Worker 5 released semaphore
+Worker 3 acquired semaphore
+Worker 3 released semaphore
 </pre></code></p>
-<p>A semaphore with bound of 1 is known as a Lock. It provides
+<p>A semaphore with bound of 1 is known as a Lock. it provides
 exclusive execution to one greenlet. They are often used to
 ensure that resources are only in use at one time in the context
 of a program.</p>
@@ -1173,7 +1174,7 @@ very powerful messaging layer for building concurrent and
 distributed applications. </p>
 <p>ZeroMQ provides a variety of socket primitives, the simplest of
 which being a Request-Response socket pair. A socket has two
-methods of interest: <code>send</code> and <code>recv</code>, both of which are
+methods of interest <code>send</code> and <code>recv</code>, both of which are
 normally blocking operations. But this is remedied by a briliant
 library by <a href="https://github.com/traviscline">Travis Cline</a> which
 uses gevent.socket to poll ZeroMQ sockets in a non-blocking
@@ -1361,13 +1362,14 @@ def ajax_endpoint(environ, start_response):
         ('Content-Type', 'application/json')
     ]
 
-    try:
-        datum = data_source.get(timeout=5)
-    except Empty:
-        datum = []
-
     start_response(status, headers)
-    return json.dumps(datum)
+
+    while True:
+        try:
+            datum = data_source.get(timeout=5)
+            yield json.dumps(datum) + '\n'
+        except Empty:
+            pass
 
 gevent.spawn(producer)
 
