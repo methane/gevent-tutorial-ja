@@ -1,5 +1,5 @@
-Online Version: http://sdiehl.github.com/gevent-tutorial/
-=========================================================
+Online Version: http://methane.github.com/gevent-tutorial-ja/
+==============================================================
 
 Want to add an example. Its uber simple.
 
