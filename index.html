@@ -347,16 +347,16 @@ Task 7 done
 Task 8 done
 Task 9 done
 Asynchronous:
-Task 2 done
-Task 8 done
-Task 9 done
-Task 7 done
-Task 6 done
-Task 5 done
-Task 0 done
-Task 4 done
-Task 3 done
 Task 1 done
+Task 2 done
+Task 9 done
+Task 8 done
+Task 7 done
+Task 5 done
+Task 3 done
+Task 0 done
+Task 6 done
+Task 4 done
 </pre></code></p>
 <p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
 メインプログラムは各タスクを実行している間 <em>ブロックする</em>
@@ -882,27 +882,27 @@ gevent.joinall([
 
 <p></code>
 <pre><code class="python">
-Worker steve got task 1
-Worker bob got task 2
+Worker bob got task 1
+Worker steve got task 2
 Worker john got task 3
 Worker john got task 4
-Worker bob got task 5
-Worker steve got task 6
+Worker steve got task 5
+Worker bob got task 6
 Assigned all work in iteration 1
-Worker steve got task 7
+Worker bob got task 7
 Worker john got task 8
-Worker bob got task 9
-Worker bob got task 10
-Worker steve got task 11
+Worker steve got task 9
+Worker steve got task 10
+Worker bob got task 11
 Worker john got task 12
 Worker john got task 13
-Worker bob got task 14
-Worker steve got task 15
-Worker steve got task 16
+Worker steve got task 14
+Worker bob got task 15
+Worker bob got task 16
 Worker john got task 17
-Worker bob got task 18
+Worker steve got task 18
 Assigned all work in iteration 2
-Worker bob got task 19
+Worker steve got task 19
 Quitting time!
 Quitting time!
 Quitting time!
@@ -980,11 +980,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 4368540048
+Hello from Greenlet 4532367760
 Size of group 2
-Hello from Greenlet 4368542448
+Hello from Greenlet 4532370160
 Size of group 1
-Hello from Greenlet 4368521008
+Hello from Greenlet 4532348720
 Ordered
 ('task', 0)
 ('task', 1)
@@ -1016,10 +1016,7 @@ Size of pool 2
 Size of pool 2
 Size of pool 1
 </pre></code></p>
-<p>Often when building gevent driven services one will center the
-entire service around a pool structure. An example might be a
-class which polls on various sockets.
-gevent を使ったサービスを作るときに、よく中央に pool を持った
+<p>gevent を使ったサービスを作るときに、よく中央に pool を持った
 構成で設計します。
 例えばたくさんのソケットをポーリングするクラスです。</p>
 <pre>
@@ -1097,14 +1094,13 @@ Worker 3 released semaphore
 から使わないようにするために利用されます。</p>
 <h2 id="thread-locals">Thread Locals</h2>
 <h2 id="actors">Actors</h2>
-<p>The actor model is a higher level concurrency model popularized
-by the language Erlang. In short the main idea is that you have a
-collection of independent Actors which have an inbox from which
-they receive messages from other Actors. The main loop inside the
-Actor iterates through its messages and takes action according to
-its desired behavior. </p>
-<p>Gevent does not have a primitive Actor type, but we can define
-one very simply using a Queue inside of a subclassed Greenlet.</p>
+<p>アクターモデルとは Erlang 言語によって有名になった高レベルの並行プログラミングモデルです。
+基本となる考え方を簡単に言うと、独立した複数のアクターが、他のアクターから
+メッセージを受信するための受信箱を持っているというものです。
+アクターの中のメインループは、メッセージを受信してはそれに対応する
+行動を取ります。</p>
+<p>gevent はプリミティブとしてのアクター型は持っていませんが、
+Greenlet クラスを継承して Queue を使うことで簡単に実現できます。</p>
 <pre>
 <code class="python">import gevent
 from gevent.queue import Queue
@@ -1131,7 +1127,7 @@ class Actor(gevent.Greenlet):
 </code>
 </pre>
 
-<p>In a use case:</p>
+<p>利用例:</p>
 <pre>
 <code class="python">import gevent
 from gevent.queue import Queue

@@ -756,9 +756,6 @@ pool.map(hello_from, xrange(3))
 ]]]
 [[[end]]]
 
-Often when building gevent driven services one will center the
-entire service around a pool structure. An example might be a
-class which polls on various sockets.
 gevent を使ったサービスを作るときに、よく中央に pool を持った
 構成で設計します。
 例えばたくさんのソケットをポーリングするクラスです。
@@ -832,15 +829,14 @@ bound が 1 のセマフォのことをロック(Lock)と言います。
 
 ## Actors
 
-The actor model is a higher level concurrency model popularized
-by the language Erlang. In short the main idea is that you have a
-collection of independent Actors which have an inbox from which
-they receive messages from other Actors. The main loop inside the
-Actor iterates through its messages and takes action according to
-its desired behavior. 
+アクターモデルとは Erlang 言語によって有名になった高レベルの並行プログラミングモデルです。
+基本となる考え方を簡単に言うと、独立した複数のアクターが、他のアクターから
+メッセージを受信するための受信箱を持っているというものです。
+アクターの中のメインループは、メッセージを受信してはそれに対応する
+行動を取ります。
 
-Gevent does not have a primitive Actor type, but we can define
-one very simply using a Queue inside of a subclassed Greenlet.
+gevent はプリミティブとしてのアクター型は持っていませんが、
+Greenlet クラスを継承して Queue を使うことで簡単に実現できます。
 
 <pre>
 <code class="python">import gevent
@@ -869,7 +865,7 @@ class Actor(gevent.Greenlet):
 </code>
 </pre>
 
-In a use case:
+利用例:
 
 <pre>
 <code class="python">import gevent
