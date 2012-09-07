@@ -126,14 +126,15 @@
 <div id="content">
 
 <header>
-    <h1><span class="green">gevent</span> For the Working Python Developer</h1>
+    <h1>Python プログラマーのための <span class="green">gevent</span> チュートリアル</h1>
     <h3 class="author">
         Written by the Gevent Community
     </h3>
 </header>
 
 <blockquote>
-gevent is a concurrency library based around <a href="http://software.schmorp.de/pkg/libev.html">libev</a>.  It provides a clean API for a variety of concurrency and network related tasks.
+gevent は <a href="http://software.schmorp.de/pkg/libev.html">libev</a> を元にした並行ライブラリです。
+ネットワークや並行プログラミングのためのクリーンなAPIを提供しています。
 </blockquote>
 
 <div class="toc">
@@ -148,7 +149,7 @@ gevent is a concurrency library based around <a href="http://software.schmorp.de
 <li><a href="#_3">コア</a><ul>
 <li><a href="#greenlets">Greenlets</a></li>
 <li><a href="#synchronous-asynchronous-execution">Synchronous &amp; Asynchronous Execution</a></li>
-<li><a href="#determinism">決定論(determinism)</a></li>
+<li><a href="#determinism">Determinism</a></li>
 <li><a href="#spawning-threads">Spawning Threads</a></li>
 <li><a href="#greenlet-state">Greenlet State</a></li>
 <li><a href="#program-shutdown">Program Shutdown</a></li>
@@ -346,16 +347,16 @@ Task 7 done
 Task 8 done
 Task 9 done
 Asynchronous:
-Task 5 done
-Task 6 done
+Task 0 done
+Task 1 done
 Task 2 done
+Task 3 done
+Task 6 done
 Task 9 done
 Task 8 done
 Task 7 done
 Task 4 done
-Task 3 done
-Task 1 done
-Task 0 done
+Task 5 done
 </pre></code></p>
 <p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
 メインプログラムは各タスクを実行している間 <em>ブロックする</em>
@@ -408,7 +409,7 @@ asynchronous()
 </code>
 </pre>
 
-<h2 id="determinism">決定論(determinism)</h2>
+<h2 id="determinism">Determinism</h2>
 <p>先に触れたように、 greenlet は決定論的に動作します。
 同じように設定した greenlets があって、同じ入力が与えられた場合、
 必ず同じ結果になります。例として、タスクを multiprocessing の pool に
@@ -532,19 +533,23 @@ g.join()
 Hi there!
 </pre></code></p>
 <h2 id="greenlet-state">Greenlet State</h2>
-<p>Like any other segment of code, Greenlets can fail in various
-ways. A greenlet may fail to throw an exception, fail to halt or
-consume too many system resources.</p></p>
-<p>The internal state of a greenlet is generally a time-dependent
-parameter. There are a number of flags on greenlets which let
-you monitor the state of the thread</p>
-
+<p>他のどんなコードでもあるように、 greenlet もいろいろな失敗をすることがあります。
+greenlet は例外を投げそこねるかもしれませんし、停止できなくなったり、
+システムリソースを食い過ぎるかもしれません。</p>
+<p>greenlet の内部状態は基本的に時間とともに変化するパラメーターになります。
+greenlet の状態をモニターするための幾つかのフラグがあります。</p>
 <ul>
 <li><code>started</code> -- Boolean, indicates whether the Greenlet has been started. </li></li>
 <li><code>ready()</code> -- Boolean, indicates whether the Greenlet has halted</li></li>
 <li><code>successful()</code> -- Boolean, indicates whether the Greenlet has halted and not thrown an exception</li></li>
 <li><code>value</code> -- arbitrary, the value returned by the Greenlet</li></li>
 <li><code>exception</code> -- exception, uncaught exception instance thrown inside the greenlet</li></li>
+<li></li>
+<li><code>started</code> -- bool値: greenlet が開始しているかどうか.</li>
+<li><code>ready()</code> -- bool値, greenlet が停止(halt)しているかどうか.</li>
+<li><code>successful()</code> -- bool値, greenlet が例外を投げずに終了したかどうか.</li>
+<li><code>value</code> -- 任意の値, greenlet が返した値.</li>
+<li><code>exception</code> -- 例外, greenlet 内で投げられた例外.</li>
 </ul>
 <pre><code class="python">
 import gevent
@@ -601,12 +606,12 @@ False
 You fail at failing.
 </pre></code></p>
 <h2 id="program-shutdown">Program Shutdown</h2>
-<p>Greenlets that fail to yield when the main program receives a
-SIGQUIT may hold the program's execution longer than expected.
-This results in so called "zombie processes" which need to be
-killed from outside of the Python interpreter.</p>
-<p>A common pattern is to listen SIGQUIT events on the main program
-and to invoke <code>gevent.shutdown</code> before exit.</p>
+<p>メインプログラムが SIGQUIT を受信した時に yield しない greenlet
+がプログラムを実行させ続ける可能性があります。
+この状態は "ゾンビプロセス" と呼ばれ、 Python インタープリターの
+外から kill してやる必要があります。</p>
+<p>一般的なパターンはメインプログラムが SIGQUIT イベントを受信して、
+exit する前に <code>gevent.shutdown</code> を呼び出すことです。</p>
 <pre>
 <code class="python">import gevent
 import signal
@@ -622,8 +627,7 @@ if __name__ == '__main__':
 </pre>
 
 <h2 id="timeouts">Timeouts</h2>
-<p>Timeouts are a constraint on the runtime of a block of code or a
-Greenlet.</p>
+<p>タイムアウトとは、コードブロックや greenlet の実行時間に対する制約です。</p>
 <pre>
 <code class="python">
 import gevent
@@ -645,7 +649,7 @@ except Timeout:
 </code>
 </pre>
 
-<p>Or with a context manager in a <code>with</code> a statement.</p>
+<p>もしくはコンテキストマネージャーとして <code>with</code> 文を使います。</p>
 <pre>
 <code class="python">import gevent
 from gevent import Timeout
@@ -986,11 +990,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 4561289616
+Hello from Greenlet 4306252176
 Size of group 2
-Hello from Greenlet 4561292016
+Hello from Greenlet 4306254576
 Size of group 1
-Hello from Greenlet 4561270576
+Hello from Greenlet 4306233136
 Ordered
 ('task', 0)
 ('task', 1)
