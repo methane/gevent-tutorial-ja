@@ -1,17 +1,17 @@
 [TOC]
 
-# Introduction
+# はじめに
 
-The structure of this tutorial assumes an intermediate level
-knowledge of Python but not much else. No knowledge of
-concurrency is expected. The goal is to give you
-the tools you need to get going with gevent, help you tame
-your existing concurrency problems and start writing asynchronous
-applications today.
+このチュートリアルはある程度の Python の知識を前提としていますが、
+それ以上の知識は前提としていません。
+並列プログラミングの知識も必要ありません。
+このチュートリアルの目的は、 gevent を扱う道具を提供し、
+読者がすでに持っている一般的な並列プログラミングの問題を手なづけて
+非同期プログラムを書き始められるように手助けすることです。
 
-### Contributors
+### 寄稿者
 
-In chronological order of contribution: 
+時系列順の寄稿者:
 [Stephen Diehl](http://www.stephendiehl.com)
 [J&eacute;r&eacute;my Bethmont](https://github.com/jerem)
 [sww](https://github.com/sww)
@@ -24,37 +24,47 @@ In chronological order of contribution:
 [Alexis Metaireau](http://notmyidea.org)
 [Daniel Velkov](https://github.com/djv)
 
-This is a collaborative document published under MIT license.
-Have something to add? See a typo? Fork and issue a
-pull request [Github](https://github.com/sdiehl/gevent-tutorial).
-Any and all contributions are welcome.
+この共同作業によるドキュメントは MIT ライセンスにて公開されています。
+何か追記したいことがあったり、タイプミスを発見した場合は、
+[Github](https://github.com/sdiehl/gevent-tutorial) で fork して pull
+request を送ってください。その他のどんな貢献も歓迎します。
 
-# Core
+### 日本語訳について
+
+時系列順の翻訳者:
+[methane](http://github.com/methane)
+
+翻訳は [gevent-tutorial-ja](http://github.com/methane/gevent-tutorial-ja)
+で行なっています。
+翻訳に対する修正依頼等はこちらにお願いします.
+
+
+# コア
 
 ## Greenlets
 
-The primary pattern used in gevent is the <strong>Greenlet</strong>, a
-lightweight coroutine provided to Python as a C extension module.
-Greenlets all run inside of the OS process for the main
-program but are scheduled cooperatively. 
+gevent で使われている一番重要なパターンが <strong>Greenlet</strong> という
+Python のC拡張の形で提供された軽量なコルーチンです。
+すべての Greenlet はメインプログラムのOSプロセス内で実行されますが、
+協調的にスケジューリングされます.
 
 > Only one greenlet is ever running at any given time.
+> (どの時点をとっても常にひとつの greenlet だけが動いている)
 
-This differs from any of the real parallelism constructs provided by
-``multiprocessing`` or ``threading`` libraries which do spin processes
-and POSIX threads which are scheduled by the operating system and
-are truly parallel.
+これは、 ``multiprocessing`` や ``threading`` が提供している、
+OS がスケジューリングして本当に並列に動くプロセスや POSIX スレッドを利用した 
+並列機構とは異なるものです。
 
 ## Synchronous & Asynchronous Execution
 
-The core idea of concurrency is that a larger task can be broken down
-into a collection of subtasks whose and scheduled to run simultaneously
-or *asynchronously*, instead of one at a time or *synchronously*. A
-switch between the two subtasks is known as a *context switch*.
+並行プログラムのコアとなる考え方は、大きいタスクは小さいサブタスクに分割して、
+それらを1つずつ、あるいは *同期的に* 動かす代わりに、同時に、あるいは
+*非同期に* 動かすことです。
+2つのサブタスク間の切り替えは *コンテキストスイッチ* と呼ばれます。
 
-A context switch in gevent is done through *yielding*. In this case
-example we have two contexts which yield to each other through invoking
-``gevent.sleep(0)``.
+gevent のコンテキストスイッチは *譲渡(yield)* によって行われます。
+次の例では、2つのコンテキストが ``gevent.sleep(0)`` を実行することにより
+お互いに譲渡しています。
 
 [[[cog
 import gevent
@@ -76,20 +86,20 @@ gevent.joinall([
 ]]]
 [[[end]]]
 
-It is illuminating to visualize the control flow of the program or walk
-through it with a debugger to see the context switches as they occur.
+次の制御フローを視覚化した画像を見るか、このサンプルプログラムを
+デバッガーでステップ実行してコンテキストスイッチが起こる様子を確認してください。
 
 ![Greenlet Control Flow](flow.gif)
 
-The real power of gevent comes when we use it for network and IO
-bound functions which can be cooperatively scheduled. Gevent has
-taken care of all the details to ensure that your network
-libraries will implicitly yield their greenlet contexts whenever
-possible. I cannot stress enough what a powerful idiom this is.
-But maybe an example will illustrate.
+gevent が本当の力を発揮するのは、ネットワークやIOバウンドの、協調的に
+スケジュールできる関数を実行するために利用する場合です。
+gevent はすべての詳細部分の面倒を見て、可能な限りネットワークライブラリが
+暗黙的に greenlet コンテキストを譲渡するようにします。
+私はこれがどれだけ強力な方法なのかをうまく強調することができません。
+でも、次の例が示してくれると思います。
 
-In this case the ``select()`` function is normally a blocking
-call that polls on various file descriptors.
+この例では、 ``select()`` 関数は通常ブロックする関数で、複数の
+ファイルディスクリプタをポーリングします。
 
 [[[cog
 import time
@@ -123,12 +133,10 @@ gevent.joinall([
 ]]]
 [[[end]]]
 
-Another somewhat synthetic example defines a ``task`` function
-which is *non-deterministic*
-(i.e. its output is not guaranteed to give the same result for
-the same inputs). In this case the side effect of running the
-function is that the task pauses its execution for a random
-number of seconds.
+もう一つのすこし人工的な例として、 *非決定論的な* (同じ入力に対して
+出力が同じになるとは限らない) ``task`` 関数を定義しています。
+この例では、 ``task`` 関数を実行すると副作用としてランダムな秒数だけ
+タスクの実行を停止します。
 
 [[[cog
 import gevent
@@ -138,7 +146,7 @@ def task(pid):
     """
     Some non-deterministic task
     """
-    gevent.sleep(random.randint(0,2)*0.001)
+    gevent.sleep(random.randint(0,2))
     print('Task', pid, 'done')
 
 def synchronous():
@@ -157,31 +165,28 @@ asynchronous()
 ]]]
 [[[end]]]
 
-In the synchronous case all the tasks are run sequentially,
-which results in the main programming *blocking* (
-i.e. pausing the execution of the main program )
-while each task executes.
+同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
+メインプログラムは各タスクを実行している間 *ブロックする*
+(メインプログラムの実行が停止される) ことになります。
 
-The important parts of the program are the
-``gevent.spawn`` which wraps up the given function
-inside of a Greenlet thread. The list of initialized greenlets 
-are stored in the array ``threads`` which is passed to
-the ``gevent.joinall`` function which blocks the current
-program to run all the given greenlets. The execution will step
-forward only when all the greenlets terminate.
 
-The important fact to notice is that the order of execution in
-the async case is essentially random and that the total execution
-time in the async case is much less than the sync case. In fact
-the maximum time for the synchronous case to complete is when
-each tasks pauses for 2 seconds resulting in a 20 seconds for the
-whole queue. In the async case the maximum runtime is roughly 2
-seconds since none of the tasks block the execution of the
-others.
+このプログラムの重要な部分は、与えられた関数を greenlet スレッドの中に
+ラップする ``gevent.spawn`` です。
+生成された greenlet のリストが ``threads`` 配列に格納され、
+``gevent.joinall`` 関数に渡されます。この関数は今のプログラムを、与えられた
+すべての greenlet を実行するためにブロックします。
+すべての greenlet が終了した時に次のステップが実行されます。
 
-A more common use case, fetching data from a server
-asynchronously, the runtime of ``fetch()`` will differ between
-requests given the load on the remote server.
+注意すべき重要な点として、非同期に実行した場合の実行順序は本質的に
+ランダムであり、トータルの実行時間は同期的に実行した場合よりもずっと
+短くなります。実際、各タスクが2秒ずつ停止すると、同期的に実行した場合は
+すべてのタスクを実行するのに20秒かかりますが、非同期に実行した場合は
+各タスクが他のタスクの実行を止めないのでだいたい2秒で終了します。
+
+
+もっと一般的なユースケースとして、サーバーからデータを非同期に取得します。
+``fetch()`` の実行時間はリモートサーバーの負荷などによってリクエストごとに
+異なります。
 
 <pre><code class="python">import gevent.monkey
 gevent.monkey.patch_socket()
@@ -217,12 +222,12 @@ asynchronous()
 </code>
 </pre>
 
-## Determinism
+## 決定論(determinism)
 
-As mentioned previously, greenlets are deterministic. Given the same
-configuration of greenlets and the same set of inputs and they always
-produce the same output. For example lets spread a task across a
-multiprocessing pool compared to a gevent pool.
+先に触れたように、 greenlet は決定論的に動作します。
+同じように設定した greenlets があって、同じ入力が与えられた場合、
+必ず同じ結果になります。例として、タスクを multiprocessing の pool に
+与えた場合と gevent pool に与えた場合を比較します。
 
 <pre>
 <code class="python">
@@ -263,30 +268,30 @@ print( run1 == run2 == run3 == run4 )
 True</code>
 </pre>
 
-Even though gevent is normally deterministic, sources of
-non-determinism can creep into your program when you begin to
-interact with outside services such as sockets and files. Thus
-even though green threads are a form of "deterministic
-concurrency", they still can experience some of the same problems
-that POSIX threads and processes experience.
+gevent が通常決定論的だといっても、ソケットやファイルなどの外部の
+サービスとのやりとりを始めると非決定論的な入力がプログラムに入り込んできます。
+green スレッドが "決定論的な並行" であっても、 POSIX スレッドやプロセスを
+使った場合に起きる問題の一部が起こります。
 
-The perennial problem involved with concurrency is known as a
-*race condition*. Simply put is when two concurrent threads
-/ processes depend on some shared resource but also attempt to
-modify this value. This results in resources whose values become
-time-dependent on the execution order. This is a problem, and in
-general one should very much try to avoid race conditions since
-they result program behavior which is globally
-non-deterministic.*
+並行プログラミングにずっと付きまとう問題が
+*レースコンディション(race condition)* です。
+簡単に言うと、2つの並行するスレッドやプロセスが幾つかの共有リソース
+(訳注:グローバル変数など)に依存しており、しかもそれを変更しようとする問題です。
+結果としてそのリソースの状態は実行順序に依存してしまいます。
+一般的にプログラマーはこの問題を可能な限り避けようとするべきです。
+そうしないとプログラムのふるまいが全体として非決定性になってしまうからです。
 
-The best approach to this is to simply avoid all global state all
-times. Global state and import-time side effects will always come
-back to bite you!
+
+レースコンディションを避ける一番の方法は、常に、全てのグローバルな状態を避ける事です。
+グローバルな状態や import 時の副作用はいつでもあなたに噛みついてきます。
+(訳注: import 時の副作用は、 import 順序によってプログラムの動作を変えてしまう、
+Python でプログラミングをすると忘れた頃にハマる問題のタネです. 並行プログラミングとは
+無関係です)
 
 ## Spawning Threads
 
-gevent provides a few wrappers around Greenlet initialization.
-Some of the most common patterns are:
+gevent は greenlet の初期化のラッパーを幾つか提供しています。
+幾つかのよくあるパターンは:
 
 [[[cog
 import gevent
@@ -318,8 +323,8 @@ gevent.joinall(threads)
 ]]]
 [[[end]]]
 
-In addition to using the base Greenlet class, you may also subclass
-Greenlet class and overload the ``_run`` method.
+Greenlet クラスを直接使うだけでなく、 Greenlet のサブクラスを作って
+``_run`` メソッドをオーバーライドすることもできます。
 
 [[[cog
 import gevent
