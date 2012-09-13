@@ -902,14 +902,6 @@ gevent.joinall([ping, pong])
 並行・分散アプリケーションを作るときに、非常に強力な
 メッセージングレイヤーになります。
 
-ZeroMQ provides a variety of socket primitives, the simplest of
-which being a Request-Response socket pair. A socket has two
-methods of interest ``send`` and ``recv``, both of which are
-normally blocking operations. But this is remedied by a briliant
-library by [Travis Cline](https://github.com/traviscline) which
-uses gevent.socket to poll ZeroMQ sockets in a non-blocking
-manner.  You can install gevent-zeromq from PyPi via:  ``pip install
-gevent-zeromq``
 ZeroMQ はたくさんの種類の socket プリミティブを提供しています。
 一番シンプルなものは リクエスト-レスポンス ペアです。
 この socket は ``send`` と ``recv`` というメソッドを持っていて、どちらも
@@ -917,7 +909,7 @@ ZeroMQ はたくさんの種類の socket プリミティブを提供してい�
 gevent.socket を使って ZeroMQ socket をノンブロッキングにポーリングするように
 してくれました。 ``pip install gevent-zeromq`` でインストールできます。
 
-(訳注: これは pyzmq に取り込まれ、最新版の pyzmq では pyzmq.green を
+(訳注: これは pyzmq に取り込まれ、最新版の 2.2.0.1 では `zmq.green` を
 import して利用することができます。)
 
 
