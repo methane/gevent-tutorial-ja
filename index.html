@@ -155,8 +155,8 @@ gevent.joinall([
 
 <p></code>
 <pre><code class="python">
-Explicit context to bar
 Running in foo
+Explicit context to bar
 Explicit context switch to foo again
 Implicit context switch back to bar
 </pre></code></p>
@@ -204,9 +204,9 @@ gevent.joinall([
 
 <p></code>
 <pre><code class="python">
+Started Polling:  at 0.0 seconds
+Started Polling:  at 0.0 seconds
 Hey lets do some stuff while the greenlets poll, at at 0.0 seconds
-Started Polling:  at 0.0 seconds
-Started Polling:  at 0.0 seconds
 Ended Polling:  at 2.0 seconds
 Ended Polling:  at 2.0 seconds
 </pre></code></p>
@@ -254,15 +254,15 @@ Task 8 done
 Task 9 done
 Asynchronous:
 Task 1 done
-Task 2 done
-Task 3 done
-Task 4 done
-Task 6 done
 Task 8 done
 Task 9 done
-Task 7 done
 Task 5 done
+Task 6 done
+Task 3 done
+Task 4 done
 Task 0 done
+Task 7 done
+Task 2 done
 </pre></code></p>
 <p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
 メインプログラムは各タスクを実行している間 <em>ブロックする</em>
@@ -703,30 +703,30 @@ gevent.joinall([
 
 <p></code>
 <pre><code class="python">
-Worker nancy got task 1
+Worker steve got task 1
 Worker john got task 2
-Worker steve got task 3
+Worker nancy got task 3
 Worker steve got task 4
-Worker john got task 5
-Worker nancy got task 6
-Worker nancy got task 7
-Worker steve got task 8
-Worker john got task 9
-Worker john got task 10
+Worker nancy got task 5
+Worker john got task 6
+Worker steve got task 7
+Worker john got task 8
+Worker nancy got task 9
+Worker steve got task 10
 Worker nancy got task 11
-Worker steve got task 12
+Worker john got task 12
 Worker steve got task 13
 Worker john got task 14
 Worker nancy got task 15
-Worker nancy got task 16
-Worker steve got task 17
+Worker steve got task 16
+Worker nancy got task 17
 Worker john got task 18
-Worker john got task 19
-Worker nancy got task 20
-Worker steve got task 21
+Worker steve got task 19
+Worker john got task 20
+Worker nancy got task 21
 Worker steve got task 22
-Worker john got task 23
-Worker nancy got task 24
+Worker nancy got task 23
+Worker john got task 24
 Quitting time!
 Quitting time!
 Quitting time!
@@ -783,26 +783,26 @@ gevent.joinall([
 <p></code>
 <pre><code class="python">
 Worker steve got task 1
-Worker bob got task 2
-Worker john got task 3
-Worker john got task 4
+Worker john got task 2
+Worker bob got task 3
+Worker steve got task 4
 Worker bob got task 5
-Worker steve got task 6
+Worker john got task 6
 Assigned all work in iteration 1
 Worker steve got task 7
 Worker john got task 8
 Worker bob got task 9
-Worker bob got task 10
-Worker steve got task 11
+Worker steve got task 10
+Worker bob got task 11
 Worker john got task 12
-Worker john got task 13
-Worker bob got task 14
-Worker steve got task 15
+Worker steve got task 13
+Worker john got task 14
+Worker bob got task 15
 Worker steve got task 16
-Worker john got task 17
-Worker bob got task 18
+Worker bob got task 17
+Worker john got task 18
 Assigned all work in iteration 2
-Worker bob got task 19
+Worker steve got task 19
 Quitting time!
 Quitting time!
 Quitting time!
@@ -833,15 +833,15 @@ group.join()
 
 <p></code>
 <pre><code class="python">
-fizz
-fizz
-fizz
-foo
-foo
-foo
 bar
 bar
 bar
+foo
+foo
+foo
+fizz
+fizz
+fizz
 </pre></code></p>
 <p>これは非同期なタスクのグループを管理するのに便利です。</p>
 <p>上で述べたように、 Group はグループ化された greenlet に対してジョブを
@@ -880,11 +880,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 4500918672
-Size of group 2
-Hello from Greenlet 4500921072
-Size of group 1
-Hello from Greenlet 4500903728
+Hello from Greenlet 4320184272
+Size of group 3
+Hello from Greenlet 4321022032
+Size of group 3
+Hello from Greenlet 4321022512
 Ordered
 ('task', 0)
 ('task', 1)
@@ -977,16 +977,16 @@ pool.map(worker2, xrange(3,6))
 
 <p></code>
 <pre><code class="python">
-Worker 1 acquired semaphore
 Worker 0 acquired semaphore
+Worker 1 acquired semaphore
 Worker 0 released semaphore
 Worker 1 released semaphore
-Worker 5 acquired semaphore
-Worker 4 acquired semaphore
-Worker 4 released semaphore
-Worker 5 released semaphore
 Worker 3 acquired semaphore
+Worker 4 acquired semaphore
 Worker 3 released semaphore
+Worker 4 released semaphore
+Worker 5 acquired semaphore
+Worker 5 released semaphore
 </pre></code></p>
 <p>bound が 1 のセマフォのことをロック(Lock)と言います。
 ロックを使うと一つの greenlet だけを実行可能にすることができます。
