@@ -824,10 +824,9 @@ bound が 1 のセマフォのことをロック(Lock)と言います。
 
 ## Thread Locals
 
-Gevnet also allows you to specify data which is local the
-greenlet context. Internally this is implemented as a global
-lookup which addresses a private namespace keyed by the
-greenlet's ``getcurrent()`` value.
+Gevent は Greenlet コンテキストごとに local なデータを保存する方法を提供しています。
+この機能は、内部では greenlet の ``getcurrent()`` で得られる値を使って保存される
+プライベートな名前空間に対して名前解決を行います。
 
 [[[cog
 import gevent
@@ -855,10 +854,10 @@ gevent.joinall([g1, g2])
 ]]]
 [[[end]]]
 
-Many web framework thats integrate with gevent store HTTP session
-objects inside of gevent thread locals. For example using the
-Werkzeug utility library and its proxy object we can create
-Flask style request objects.
+Gevent に統合されている多くの Web フレームワークが、HTTPセッションオブジェクトを
+gevent の thread local 内に保存しています。例えば、 Werkzeug のユーティリティー
+ライブラリーとその中の proxy オブジェクトを利用して、 Flask のような request
+オブジェクトを作ることができます。
 
 <pre>
 <code class="python">from gevent.local import local
@@ -899,14 +898,12 @@ WSGIServer(('', 8000), application).serve_forever()
 <code>
 </pre>
 
-Flask's system is more a bit sophisticated than this example, but the
-idea of using thread locals as local session storage is nontheless the
-same.
+Flask のシステムはこれよりも少し複雑ですが、 thread local をローカルの
+セッションストレージに利用するというアイデアは共通です。
 
 ## Subprocess
 
-As of Gevent 1.0, support has been added for cooperative waiting
-on subprocess.
+Gevent 1.0 からは、 subprocess に対する協調動作がサポートされました。
 
 <pre>
 <code class="python">import gevent
@@ -926,9 +923,9 @@ print(output.value)
 <code>
 </pre>
 
-Many people also want to use gevent and multiprocessing together. This
-can be done as most multiprocessing objects expose the underlying file
-descriptors.
+多くの人が gevent と一緒に multiprocessing を利用したいと考えています。
+これを実現するには、 multiprocessing のオブジェクトが公開している
+ファイルディスクリプターを利用します。
 
 [[[cog
 import gevent

@@ -254,16 +254,16 @@ Task 7 done
 Task 8 done
 Task 9 done
 Asynchronous:
-Task 0 done
-Task 7 done
-Task 8 done
-Task 3 done
 Task 6 done
-Task 5 done
-Task 4 done
-Task 1 done
-Task 2 done
 Task 9 done
+Task 0 done
+Task 4 done
+Task 3 done
+Task 8 done
+Task 7 done
+Task 2 done
+Task 1 done
+Task 5 done
 </pre></code></p>
 <p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
 メインプログラムは各タスクを実行している間 <em>ブロックする</em>
@@ -881,11 +881,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 4354578384
+Hello from Greenlet 4355508176
 Size of group 3
-Hello from Greenlet 4355416144
+Hello from Greenlet 4356345936
 Size of group 3
-Hello from Greenlet 4355416624
+Hello from Greenlet 4356346416
 Ordered
 ('task', 0)
 ('task', 1)
@@ -994,10 +994,9 @@ Worker 5 released semaphore
 プログラムのコンテキストでなにかのリソースを並行して複数の greenlet
 から使わないようにするために利用されます。</p>
 <h2 id="thread-locals">Thread Locals</h2>
-<p>Gevnet also allows you to specify data which is local the
-greenlet context. Internally this is implemented as a global
-lookup which addresses a private namespace keyed by the
-greenlet's <code>getcurrent()</code> value.</p>
+<p>Gevent は Greenlet コンテキストごとに local なデータを保存する方法を提供しています。
+この機能は、内部では greenlet の <code>getcurrent()</code> で得られる値を使って保存される
+プライベートな名前空間に対して名前解決を行います。</p>
 <pre><code class="python">
 import gevent
 from gevent.local import local
@@ -1029,10 +1028,10 @@ gevent.joinall([g1, g2])
 2
 x is not local to f2
 </pre></code></p>
-<p>Many web framework thats integrate with gevent store HTTP session
-objects inside of gevent thread locals. For example using the
-Werkzeug utility library and its proxy object we can create
-Flask style request objects.</p>
+<p>Gevent に統合されている多くの Web フレームワークが、HTTPセッションオブジェクトを
+gevent の thread local 内に保存しています。例えば、 Werkzeug のユーティリティー
+ライブラリーとその中の proxy オブジェクトを利用して、 Flask のような request
+オブジェクトを作ることができます。</p>
 <pre>
 <code class="python">from gevent.local import local
 from werkzeug.local import LocalProxy
@@ -1071,12 +1070,10 @@ WSGIServer(('', 8000), application).serve_forever()
 <code>
 </pre>
 
-<p>Flask's system is more a bit sophisticated than this example, but the
-idea of using thread locals as local session storage is nontheless the
-same.</p>
+<p>Flask のシステムはこれよりも少し複雑ですが、 thread local をローカルの
+セッションストレージに利用するというアイデアは共通です。</p>
 <h2 id="subprocess">Subprocess</h2>
-<p>As of Gevent 1.0, support has been added for cooperative waiting
-on subprocess.</p>
+<p>Gevent 1.0 からは、 subprocess に対する協調動作がサポートされました。</p>
 <pre>
 <code class="python">import gevent
 from gevent.subprocess import Popen, PIPE
@@ -1095,9 +1092,9 @@ print(output.value)
 <code>
 </pre>
 
-<p>Many people also want to use gevent and multiprocessing together. This
-can be done as most multiprocessing objects expose the underlying file
-descriptors.</p>
+<p>多くの人が gevent と一緒に multiprocessing を利用したいと考えています。
+これを実現するには、 multiprocessing のオブジェクトが公開している
+ファイルディスクリプターを利用します。</p>
 <pre><code class="python">
 import gevent
 from multiprocessing import Process, Pipe
