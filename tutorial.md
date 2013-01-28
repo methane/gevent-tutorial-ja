@@ -172,7 +172,6 @@ asynchronous()
 メインプログラムは各タスクを実行している間 *ブロックする*
 (メインプログラムの実行が停止される) ことになります。
 
-
 このプログラムの重要な部分は、与えられた関数を greenlet スレッドの中に
 ラップする ``gevent.spawn`` です。
 生成された greenlet のリストが ``threads`` 配列に格納され、
@@ -186,8 +185,7 @@ asynchronous()
 すべてのタスクを実行するのに20秒かかりますが、非同期に実行した場合は
 各タスクが他のタスクの実行を止めないのでだいたい2秒で終了します。
 
-
-もっと一般的なユースケースとして、サーバーからデータを非同期に取得します。
+もっと一般的なユースケースとして、サーバーからデータを非同期に取得する場合、
 ``fetch()`` の実行時間はリモートサーバーの負荷などによってリクエストごとに
 異なります。
 
@@ -283,7 +281,6 @@ green スレッドが "決定論的な並行" であっても、 POSIX スレッ
 結果としてそのリソースの状態は実行順序に依存してしまいます。
 一般的にプログラマーはこの問題を可能な限り避けようとするべきです。
 そうしないとプログラムのふるまいが全体として非決定性になってしまうからです。
-
 
 レースコンディションを避ける一番の方法は、常に、全てのグローバルな状態を避ける事です。
 グローバルな状態や import 時の副作用はいつでもあなたに噛みついてきます。
@@ -511,6 +508,61 @@ except Timeout:
 
 ]]]
 [[[end]]]
+
+## モンキーパッチ
+
+Gevent の暗黒面に触れていきます。
+強力なコルーチンのパターンを推奨するためにここまでモンキーパッチに
+ついて触れるのを避けて来ましたが、そろそろこの黒魔術について話す時です。
+いままでのコードに ``monkey.patch_socket()`` というコマンドが出てきたのに
+気づきましたか？これは標準ライブラリの socket ライブラリを改変するコマンドです。
+
+<pre>
+<code class="python">import socket
+print( socket.socket )
+
+print "After monkey patch"
+from gevent import monkey
+monkey.patch_socket()
+print( socket.socket )
+
+import select
+print select.select
+monkey.patch_select()
+print "After monkey patch"
+print( select.select )
+</code>
+</pre>
+
+<pre>
+<code class="python">class 'socket.socket'
+After monkey patch
+class 'gevent.socket.socket'
+
+built-in function select
+After monkey patch
+function select at 0x1924de8
+</code>
+</pre>
+
+Python のランタイムは、モジュール、クラス、そして関数に至るまで、
+ほとんどのオブジェクトについて実行時に編集することを許しています。
+これは一般的にはとーっても悪いやり方です。「暗黙の副作用」を作り出し、
+問題が発生した時にデバッグするのを非常に難しくするからです。
+それでも、 Python 自体の基本的な振る舞いを変更する必要がある例外的な状況では
+モンキーパッチを使うことができます。
+この場合、 gevent は標準ライブラリの `socket, ssl, threading, select` などにあるの多くの
+ブロックするシステムコールを協調的に動作するようにパッチします。
+
+例えば、 Redis の Python バインディングは通常の TCP ソケットを使って
+`redis-server` インスタンスと通信します。
+`gevent.monkey.patch_all()` を実行するだけで、 redis バインディングは
+協調的にリクエストをするようになり、その他の gevent のスタックと一緒に
+動くようになります。
+
+モンキーパッチを使えば、そのままでは gevent で動作しないライブラリを
+1行のコードを書くだけで統合できるようになります。
+モンキーパッチは邪悪ですが、この場合は必要悪です。
 
 # データ構造
 
@@ -741,7 +793,6 @@ pool は並行数を制限しながら動的な数の greenlet を扱うため�
 
 [[[cog
 import gevent
-from gevent import getcurrent
 from gevent.pool import Pool
 
 pool = Pool(2)
@@ -903,31 +954,47 @@ Flask のシステムはこれよりも少し複雑ですが、 thread local を
 
 ## Subprocess
 
-Gevent 1.0 からは、 subprocess に対する協調動作がサポートされました。
+Gevent 1.0 から、 `gevent.subprocess` -- Python の `subprocess` モジュールにパッチを当てたバージョン --
+が追加されました。
+このモジュールは子プロセスを協調的に待つことができます。
 
 <pre>
-<code class="python">import gevent
+<code class="python">
+import gevent
 from gevent.subprocess import Popen, PIPE
 
-# Uses a green pipe which is cooperative
-sub = Popen(['uname'], stdout=PIPE)
-read_output = gevent.spawn(sub.stdout.read)
+def cron():
+    while True:
+        print "cron"
+        gevent.sleep(0.2)
 
-output = read_output.join()
-print(output.value)
-<code>
+g = gevent.spawn(cron)
+sub = Popen(['sleep 1; uname'], stdout=PIPE, shell=True)
+out, err = sub.communicate()
+g.kill()
+print out.rstrip()
 </pre>
 
 <pre>
-<code class="python">Linux
+<code class="python">
+cron
+cron
+cron
+cron
+cron
+Linux
 <code>
 </pre>
 
-多くの人が gevent と一緒に multiprocessing を利用したいと考えています。
-これを実現するには、 multiprocessing のオブジェクトが公開している
-ファイルディスクリプターを利用します。
+多くの人が `gevent` と一緒に `multiprocessing` を利用したいと考えています。
+これを実現するためにはまず、 `multiprocessing` が提供しているプロセス間通信が
+デフォルトでは協調的に動作しないという問題を解決しなければなりません。
+`multiprocessing.Connection` ベースのオブジェクト (`Pipe` など) が内部のファイルディスクリプタを公開しているので、
+`gevent.socket.wait_read` と `wait_write` を使って実際に read/write する前に
+read可能/write可能 イベントを協調的に待つことができます。
 
-[[[cog
+<pre>
+<code class="python">
 import gevent
 from multiprocessing import Process, Pipe
 from gevent.socket import wait_read, wait_write
@@ -960,8 +1027,26 @@ if __name__ == '__main__':
     g1 = gevent.spawn(get_msg)
     g2 = gevent.spawn(put_msg)
     gevent.joinall([g1, g2], timeout=1)
-]]]
-[[[end]]]
+</code>
+</pre>
+
+ただし、まだ他にも `multiprocessing` と gevent の組み合わせは OS 依存の落とし穴を持っています。
+
+* POSIX 準拠のシステムでの [fork](http://linux.die.net/man/2/fork) 後
+副作用の1つは、 `multiprocessing.Process` の生成前に spawn された greenlet は
+親プロセスと子プロセスの両方で実行されます。
+* 上の例にある、 `put_msg()` からの `a.send()` の呼び出しは、呼び出し側スレッドを
+非協調的にブロックする可能性があります。
+write可能イベントは最低1バイトを書き込み可能であることしか保証していません。
+write が完了する前に内部のバッファがいっぱいになる可能性があります。
+* 上記の `wait_write()` / `wait_read()` ベースの方法は、 Windows では動作しません。
+(``IOError: 3 is not a socket (files are not supported)``)
+Windows ではパイプのイベントを監視できないからです。
+
+Python の [gipc](http://pypi.python.org/pypi/gipc) パッケージはこの問題を、 POSIX 準拠のシステムと
+Windows の両方で透過的に解決しています。
+このパッケージは gevent に対応した `multiprocessing.Process` ベースの子プロセスと
+パイプを使った協調的なプロセス間通信を提供しています。
 
 ## Actors
 

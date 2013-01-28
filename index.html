@@ -58,9 +58,10 @@ gevent は <a href="http://software.schmorp.de/pkg/libev.html">libev</a> を元�
 <li><a href="#greenlet-state">Greenlet State</a></li>
 <li><a href="#program-shutdown">Program Shutdown</a></li>
 <li><a href="#timeouts">Timeouts</a></li>
+<li><a href="#_4">モンキーパッチ</a></li>
 </ul>
 </li>
-<li><a href="#_4">データ構造</a><ul>
+<li><a href="#_5">データ構造</a><ul>
 <li><a href="#events">Events</a></li>
 <li><a href="#queues">Queues</a></li>
 <li><a href="#groups-and-pools">Groups and Pools</a></li>
@@ -254,16 +255,16 @@ Task 7 done
 Task 8 done
 Task 9 done
 Asynchronous:
+Task 2 done
+Task 5 done
 Task 6 done
+Task 7 done
 Task 9 done
-Task 0 done
 Task 4 done
 Task 3 done
+Task 0 done
 Task 8 done
-Task 7 done
-Task 2 done
 Task 1 done
-Task 5 done
 </pre></code></p>
 <p>同期的に実行した場合、全てのタスクはシーケンシャルに実行され、
 メインプログラムは各タスクを実行している間 <em>ブロックする</em>
@@ -279,7 +280,7 @@ Task 5 done
 短くなります。実際、各タスクが2秒ずつ停止すると、同期的に実行した場合は
 すべてのタスクを実行するのに20秒かかりますが、非同期に実行した場合は
 各タスクが他のタスクの実行を止めないのでだいたい2秒で終了します。</p>
-<p>もっと一般的なユースケースとして、サーバーからデータを非同期に取得します。
+<p>もっと一般的なユースケースとして、サーバーからデータを非同期に取得する場合、
 <code>fetch()</code> の実行時間はリモートサーバーの負荷などによってリクエストごとに
 異なります。</p>
 <pre><code class="python">import gevent.monkey
@@ -607,7 +608,57 @@ Thread 1 timed out
 Thread 2 timed out
 Thread 3 timed out
 </pre></code></p>
-<h1 id="_4">データ構造</h1>
+<h2 id="_4">モンキーパッチ</h2>
+<p>Gevent の暗黒面に触れていきます。
+強力なコルーチンのパターンを推奨するためにここまでモンキーパッチに
+ついて触れるのを避けて来ましたが、そろそろこの黒魔術について話す時です。
+いままでのコードに <code>monkey.patch_socket()</code> というコマンドが出てきたのに
+気づきましたか？これは標準ライブラリの socket ライブラリを改変するコマンドです。</p>
+<pre>
+<code class="python">import socket
+print( socket.socket )
+
+print "After monkey patch"
+from gevent import monkey
+monkey.patch_socket()
+print( socket.socket )
+
+import select
+print select.select
+monkey.patch_select()
+print "After monkey patch"
+print( select.select )
+</code>
+</pre>
+
+<pre>
+<code class="python">class 'socket.socket'
+After monkey patch
+class 'gevent.socket.socket'
+
+built-in function select
+After monkey patch
+function select at 0x1924de8
+</code>
+</pre>
+
+<p>Python のランタイムは、モジュール、クラス、そして関数に至るまで、
+ほとんどのオブジェクトについて実行時に編集することを許しています。
+これは一般的にはとーっても悪いやり方です。「暗黙の副作用」を作り出し、
+問題が発生した時にデバッグするのを非常に難しくするからです。
+それでも、 Python 自体の基本的な振る舞いを変更する必要がある例外的な状況では
+モンキーパッチを使うことができます。
+この場合、 gevent は標準ライブラリの <code>socket, ssl, threading, select</code> などにあるの多くの
+ブロックするシステムコールを協調的に動作するようにパッチします。</p>
+<p>例えば、 Redis の Python バインディングは通常の TCP ソケットを使って
+<code>redis-server</code> インスタンスと通信します。
+<code>gevent.monkey.patch_all()</code> を実行するだけで、 redis バインディングは
+協調的にリクエストをするようになり、その他の gevent のスタックと一緒に
+動くようになります。</p>
+<p>モンキーパッチを使えば、そのままでは gevent で動作しないライブラリを
+1行のコードを書くだけで統合できるようになります。
+モンキーパッチは邪悪ですが、この場合は必要悪です。</p>
+<h1 id="_5">データ構造</h1>
 <h2 id="events">Events</h2>
 <p>イベントは greenlet 間の非同期通信の一つです。</p>
 <pre>
@@ -881,11 +932,11 @@ for i in igroup.imap_unordered(intensive, xrange(3)):
 <p></code>
 <pre><code class="python">
 Size of group 3
-Hello from Greenlet 4355508176
+Hello from Greenlet 4433885296
 Size of group 3
-Hello from Greenlet 4356345936
+Hello from Greenlet 4434739440
 Size of group 3
-Hello from Greenlet 4356346416
+Hello from Greenlet 4434739920
 Ordered
 ('task', 0)
 ('task', 1)
@@ -900,7 +951,6 @@ Unordered
 最適です。</p>
 <pre><code class="python">
 import gevent
-from gevent import getcurrent
 from gevent.pool import Pool
 
 pool = Pool(2)
@@ -1073,29 +1123,45 @@ WSGIServer(('', 8000), application).serve_forever()
 <p>Flask のシステムはこれよりも少し複雑ですが、 thread local をローカルの
 セッションストレージに利用するというアイデアは共通です。</p>
 <h2 id="subprocess">Subprocess</h2>
-<p>Gevent 1.0 からは、 subprocess に対する協調動作がサポートされました。</p>
+<p>Gevent 1.0 から、 <code>gevent.subprocess</code> -- Python の <code>subprocess</code> モジュールにパッチを当てたバージョン --
+が追加されました。
+このモジュールは子プロセスを協調的に待つことができます。</p>
 <pre>
-<code class="python">import gevent
+<code class="python">
+import gevent
 from gevent.subprocess import Popen, PIPE
 
-# Uses a green pipe which is cooperative
-sub = Popen(['uname'], stdout=PIPE)
-read_output = gevent.spawn(sub.stdout.read)
+def cron():
+    while True:
+        print "cron"
+        gevent.sleep(0.2)
 
-output = read_output.join()
-print(output.value)
-<code>
+g = gevent.spawn(cron)
+sub = Popen(['sleep 1; uname'], stdout=PIPE, shell=True)
+out, err = sub.communicate()
+g.kill()
+print out.rstrip()
 </pre>
 
 <pre>
-<code class="python">Linux
+<code class="python">
+cron
+cron
+cron
+cron
+cron
+Linux
 <code>
 </pre>
 
-<p>多くの人が gevent と一緒に multiprocessing を利用したいと考えています。
-これを実現するには、 multiprocessing のオブジェクトが公開している
-ファイルディスクリプターを利用します。</p>
-<pre><code class="python">
+<p>多くの人が <code>gevent</code> と一緒に <code>multiprocessing</code> を利用したいと考えています。
+これを実現するためにはまず、 <code>multiprocessing</code> が提供しているプロセス間通信が
+デフォルトでは協調的に動作しないという問題を解決しなければなりません。
+<code>multiprocessing.Connection</code> ベースのオブジェクト (<code>Pipe</code> など) が内部のファイルディスクリプタを公開しているので、
+<code>gevent.socket.wait_read</code> と <code>wait_write</code> を使って実際に read/write する前に
+read可能/write可能 イベントを協調的に待つことができます。</p>
+<pre>
+<code class="python">
 import gevent
 from multiprocessing import Process, Pipe
 from gevent.socket import wait_read, wait_write
@@ -1128,11 +1194,26 @@ if __name__ == '__main__':
     g1 = gevent.spawn(get_msg)
     g2 = gevent.spawn(put_msg)
     gevent.joinall([g1, g2], timeout=1)
+</code>
 </pre>
 
-<p></code>
-<pre><code class="python">
-</pre></code></p>
+<p>ただし、まだ他にも <code>multiprocessing</code> と gevent の組み合わせは OS 依存の落とし穴を持っています。</p>
+<ul>
+<li>POSIX 準拠のシステムでの <a href="http://linux.die.net/man/2/fork">fork</a> 後
+副作用の1つは、 <code>multiprocessing.Process</code> の生成前に spawn された greenlet は
+親プロセスと子プロセスの両方で実行されます。</li>
+<li>上の例にある、 <code>put_msg()</code> からの <code>a.send()</code> の呼び出しは、呼び出し側スレッドを
+非協調的にブロックする可能性があります。
+write可能イベントは最低1バイトを書き込み可能であることしか保証していません。
+write が完了する前に内部のバッファがいっぱいになる可能性があります。</li>
+<li>上記の <code>wait_write()</code> / <code>wait_read()</code> ベースの方法は、 Windows では動作しません。
+(<code>IOError: 3 is not a socket (files are not supported)</code>)
+Windows ではパイプのイベントを監視できないからです。</li>
+</ul>
+<p>Python の <a href="http://pypi.python.org/pypi/gipc">gipc</a> パッケージはこの問題を、 POSIX 準拠のシステムと
+Windows の両方で透過的に解決しています。
+このパッケージは gevent に対応した <code>multiprocessing.Process</code> ベースの子プロセスと
+パイプを使った協調的なプロセス間通信を提供しています。</p>
 <h2 id="actors">Actors</h2>
 <p>アクターモデルとは Erlang 言語によって有名になった高レベルの並行プログラミングモデルです。
 基本となる考え方を簡単に言うと、独立した複数のアクターが、他のアクターから
